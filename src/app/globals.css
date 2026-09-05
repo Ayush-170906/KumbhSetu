@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+:root {
+  --color-ivory: #f7f1e6;
+  --color-ivory-deep: #efe6d4;
+  --color-surface: #fffdf8;
+  --color-surface-muted: #f1e9d8;
+  --color-surface-sunk: #eadfc8;
+  --color-border: #ddd0b4;
+  --color-border-strong: #c9b791;
+
+  --color-ink: #241a12;
+  --color-ink-muted: #6d5f4d;
+  --color-ink-soft: #9c8d76;
+
+  --color-primary: #bf5326;
+  --color-primary-dark: #93401d;
+  --color-primary-soft: #f2dcc6;
+  --color-primary-soft-ink: #7a3416;
+
+  --color-secondary: #43301f;
+  --color-secondary-soft: #ece1cd;
+
+  --color-accent: #7a6636;
+
+  --color-status-green: #1f6e45;
+  --color-status-green-bg: #e2efe2;
+  --color-status-green-border: #b9d6bb;
+
+  --color-status-amber: #a06816;
+  --color-status-amber-bg: #f8edd4;
+  --color-status-amber-border: #e6cd97;
+
+  --color-status-red: #a8382a;
+  --color-status-red-bg: #f7e3de;
+  --color-status-red-border: #e5b7ab;
+
+  --color-map-river: #7a9a9c;
+  --color-map-river-bank: #dfe2d3;
+
+  --font-ui: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-editorial: var(--font-plex-serif), "IBM Plex Serif", Georgia, serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+
+  --shadow-panel: 0 1px 2px rgba(36, 26, 18, 0.06), 0 4px 16px rgba(36, 26, 18, 0.05);
+  --shadow-card: 0 1px 2px rgba(36, 26, 18, 0.05);
+}
+
+@theme inline {
+  --color-ivory: var(--color-ivory);
+  --color-ivory-deep: var(--color-ivory-deep);
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-surface-sunk: var(--color-surface-sunk);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+
+  --color-ink: var(--color-ink);
+  --color-ink-muted: var(--color-ink-muted);
+  --color-ink-soft: var(--color-ink-soft);
+
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-primary-soft-ink: var(--color-primary-soft-ink);
+
+  --color-secondary: var(--color-secondary);
+  --color-secondary-soft: var(--color-secondary-soft);
+
+  --color-accent: var(--color-accent);
+
+  --color-status-green: var(--color-status-green);
+  --color-status-green-bg: var(--color-status-green-bg);
+  --color-status-green-border: var(--color-status-green-border);
+  --color-status-amber: var(--color-status-amber);
+  --color-status-amber-bg: var(--color-status-amber-bg);
+  --color-status-amber-border: var(--color-status-amber-border);
+  --color-status-red: var(--color-status-red);
+  --color-status-red-bg: var(--color-status-red-bg);
+  --color-status-red-border: var(--color-status-red-border);
+
+  --color-map-river: var(--color-map-river);
+  --color-map-river-bank: var(--color-map-river-bank);
+
+  --font-ui: var(--font-ui);
+  --font-editorial: var(--font-editorial);
+  --font-mono: var(--font-mono);
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-ivory);
+  color: var(--color-ink);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+::selection {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-soft-ink);
+}
+
+.font-editorial {
+  font-family: var(--font-editorial);
+}
+
+.font-mono-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbars tuned for dense operational panels */
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 4px;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  70% { transform: scale(2.1); opacity: 0; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+.map-pulse {
+  animation: pulse-ring 2.2s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.28s ease-out;
+}
+
+@media print {
+  body { background: white; }
+}

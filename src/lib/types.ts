@@ -1,0 +1,237 @@
+// Core domain model for Kumbh Setu.
+// All data flowing through this file is SIMULATED / SYNTHETIC unless explicitly noted otherwise.
+
+export type Role = "pilgrim" | "volunteer" | "management";
+
+export type RiskBand = "green" | "yellow" | "red";
+
+export type DensityLevel = "low" | "moderate" | "high" | "severe";
+
+export type Trend = "up" | "down" | "flat";
+
+export interface ZonePoint {
+  x: number;
+  y: number;
+}
+
+export interface Zone {
+  id: string;
+  code: string; // e.g. "Z04"
+  name: string; // e.g. "Trimbakeshwar Temple Perimeter"
+  shortName: string; // e.g. "Ghat 4"
+  polygon: ZonePoint[]; // abstract map coordinates, 0-1000 viewBox space
+  labelPoint: ZonePoint;
+  density: DensityLevel;
+  densityPercent: number; // 0-100, capacity utilization
+  riskBand: RiskBand;
+  riskScore: number; // 0-100
+  trend: Trend;
+  capacity: number;
+  currentOccupancy: number;
+}
+
+export type FacilityType =
+  | "medical"
+  | "water"
+  | "toilet"
+  | "food"
+  | "parking"
+  | "help_desk";
+
+export type FacilityStatus = "open" | "limited" | "closed";
+
+export interface Facility {
+  id: string;
+  type: FacilityType;
+  name: string;
+  zoneId: string;
+  position: ZonePoint;
+  status: FacilityStatus;
+  load: "low" | "moderate" | "high";
+  distanceM?: number; // computed relative to viewer in demo context
+}
+
+export type IncidentType =
+  | "medical"
+  | "lost_person"
+  | "crowd_pressure"
+  | "security"
+  | "facility"
+  | "other";
+
+export type IncidentSeverity = "low" | "moderate" | "critical";
+
+export type IncidentStatus =
+  | "reported"
+  | "triaged"
+  | "dispatched"
+  | "acknowledged"
+  | "responding"
+  | "resolved"
+  | "escalated"
+  | "cancelled";
+
+export interface IncidentTimelineEvent {
+  status: IncidentStatus | "created" | "note";
+  label: string;
+  timestamp: string; // ISO
+  actor?: string;
+  detail?: string;
+}
+
+export interface Incident {
+  id: string;
+  code: string; // "KS-1042"
+  type: IncidentType;
+  severity: IncidentSeverity;
+  zoneId: string;
+  position: ZonePoint;
+  createdAt: string;
+  updatedAt: string;
+  status: IncidentStatus;
+  reportedBy: {
+    role: Role;
+    label: string;
+  };
+  assignedVolunteerId?: string;
+  etaMinutes?: number;
+  timeline: IncidentTimelineEvent[];
+  summary: string;
+  preferredLanguage?: LanguageCode;
+  requiredSkill?: string;
+  matchQuality?: "skill_and_language" | "skill" | "language" | "nearest";
+  photoUrls?: string[];
+}
+
+export type LanguageCode = "en" | "hi" | "mr";
+
+export type VolunteerAvailability = "available" | "on_task" | "off_duty";
+
+export interface Volunteer {
+  id: string; // "V-218"
+  name: string;
+  zoneId: string;
+  position: ZonePoint;
+  availability: VolunteerAvailability;
+  skills: string[];
+  languages: LanguageCode[];
+  shiftStart: string;
+  shiftEnd: string;
+  lastSeen: string;
+  activeTaskId?: string;
+}
+
+export type TaskState =
+  | "created"
+  | "assigned"
+  | "accepted"
+  | "in_progress"
+  | "arrived"
+  | "resolved"
+  | "escalated"
+  | "cancelled";
+
+export interface Task {
+  id: string;
+  incidentId: string;
+  assigneeId: string;
+  priority: IncidentSeverity;
+  state: TaskState;
+  createdAt: string;
+  acceptedAt?: string;
+  arrivedAt?: string;
+  resolvedAt?: string;
+}
+
+export interface RiskContributor {
+  label: string;
+  weightPercent: number;
+}
+
+export interface RiskSnapshot {
+  zoneId: string;
+  score: number;
+  band: RiskBand;
+  generatedAt: string;
+  modelVersion: string;
+  confidence: number; // 0-1
+  forecastBand?: RiskBand;
+  forecastHorizonMinutes?: [number, number];
+  contributors: RiskContributor[];
+  narrative: string;
+}
+
+export interface Resource {
+  id: string;
+  type: string;
+  zoneId: string;
+  quantity: number;
+  status: "adequate" | "low" | "critical";
+}
+
+export type NotificationChannel = "push" | "sms" | "in_app";
+
+export interface Notification {
+  id: string;
+  recipientRole: Role;
+  recipientId?: string;
+  channel: NotificationChannel;
+  title: string;
+  body: string;
+  event: string;
+  createdAt: string;
+  deliveryState: "sent" | "delivered" | "failed" | "queued";
+}
+
+export interface AuditEvent {
+  id: string;
+  actor: string;
+  action: string;
+  entity: string;
+  entityId: string;
+  timestamp: string;
+  metadata?: string;
+}
+
+export interface SystemStatus {
+  mode: "simulation";
+  connectivity: "nominal" | "degraded" | "offline";
+  lastSyncAt: string;
+}
+
+export type AdvisorySeverity = "info" | "advisory" | "warning";
+
+export interface Advisory {
+  id: string;
+  zoneId: "all" | string;
+  severity: AdvisorySeverity;
+  message: string;
+  issuedBy: string;
+  createdAt: string;
+  active: boolean;
+}
+
+export interface FoundReport {
+  id: string;
+  code: string;
+  zoneId: string;
+  description: string;
+  createdAt: string;
+  status: "open" | "matched" | "closed";
+  matchedIncidentId?: string;
+}
+
+export interface LostFoundMatch {
+  incidentId: string;
+  foundReportId: string;
+  score: number;
+}
+
+export interface ZoneMessage {
+  id: string;
+  zoneId: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  createdAt: string;
+}
