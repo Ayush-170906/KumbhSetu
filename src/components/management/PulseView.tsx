@@ -1,13 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import type { Zone, RiskSnapshot } from "@/lib/types";
+import type { Zone, RiskSnapshot, EmergingSignal, GroundReport } from "@/lib/types";
 import { PulsePanel } from "@/components/pulse/PulsePanel";
+import { EmergingSignals } from "@/components/pulse/EmergingSignals";
 import { StatusPill, bandLabel } from "@/components/ui/StatusPill";
 import { SimTag } from "@/components/ui/SimTag";
-import { Panel } from "@/components/ui/Panel";
+import { Panel, PanelHeader } from "@/components/ui/Panel";
 
-export function PulseView({ zones, riskSnapshots }: { zones: Zone[]; riskSnapshots: Record<string, RiskSnapshot> }) {
+export function PulseView({
+  zones,
+  riskSnapshots,
+  emergingSignals = [],
+  groundReports = [],
+  onPromote,
+}: {
+  zones: Zone[];
+  riskSnapshots: Record<string, RiskSnapshot>;
+  emergingSignals?: EmergingSignal[];
+  groundReports?: GroundReport[];
+  onPromote?: (reportId: string) => void;
+}) {
   const sorted = [...zones].sort((a, b) => b.riskScore - a.riskScore);
   const [selected, setSelected] = useState(sorted[0]?.id);
   const activeZone = zones.find((z) => z.id === selected) ?? zones[0];
@@ -24,6 +37,21 @@ export function PulseView({ zones, riskSnapshots }: { zones: Zone[]; riskSnapsho
         </div>
         <SimTag label="SYNTHETIC SIGNALS" />
       </div>
+
+      {emergingSignals.length > 0 && (
+        <Panel>
+          <PanelHeader
+            title="Emerging signals"
+            subtitle="Volunteer field reports + pilgrim demand, aggregated — decision support, not automated action"
+          />
+          <EmergingSignals
+            signals={emergingSignals}
+            reports={groundReports}
+            zones={zones}
+            onPromote={onPromote}
+          />
+        </Panel>
+      )}
 
       <div className="grid md:grid-cols-3 gap-4">
         <Panel className="md:col-span-1 !p-0">

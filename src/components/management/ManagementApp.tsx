@@ -7,6 +7,7 @@ import { TopStatusBar } from "./TopStatusBar";
 import { SideNav, type ManagementView } from "./SideNav";
 import { OperationsView } from "./OperationsView";
 import { PulseView } from "./PulseView";
+import { FieldReportsView } from "./FieldReportsView";
 import { AnalyticsView } from "./AnalyticsView";
 import { EventLog } from "./EventLog";
 import { AdvisoriesView } from "./AdvisoriesView";
@@ -66,7 +67,19 @@ export default function ManagementApp() {
 
         {view === "pulse" && (
           <div className="flex-1 overflow-y-auto scroll-thin">
-            <PulseView zones={store.zones} riskSnapshots={store.riskSnapshots} />
+            <PulseView
+              zones={store.zones}
+              riskSnapshots={store.riskSnapshots}
+              emergingSignals={store.emergingSignals}
+              groundReports={store.groundReports}
+              onPromote={(id) => store.promoteReportToIncident(id)}
+            />
+          </div>
+        )}
+
+        {view === "fieldreports" && (
+          <div className="flex-1 overflow-y-auto scroll-thin">
+            <FieldReportsView zones={store.zones} />
           </div>
         )}
 

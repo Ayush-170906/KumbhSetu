@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useAppStore } from "@/store/useAppStore";
 import { subscribeToRealtimeEvents } from "@/lib/api";
 import { MobileShell } from "@/components/pilgrim/MobileShell";
@@ -8,7 +9,7 @@ import { AvailabilityHeader } from "./AvailabilityHeader";
 import { TaskDetail } from "./TaskDetail";
 import { EmptyQueue } from "./EmptyQueue";
 import { ZoneChat } from "./ZoneChat";
-import { SevakAssistant } from "./SevakAssistant";
+import { SetuCompanion } from "@/components/setu/SetuCompanion";
 import { Icon, type IconName } from "@/components/ui/Icon";
 
 type Tab = "task" | "chat" | "assistant";
@@ -34,7 +35,7 @@ export default function VolunteerApp() {
   const tabs: { id: Tab; label: string; icon: IconName }[] = [
     { id: "task", label: "Task", icon: "volunteer" },
     { id: "chat", label: "Team Chat", icon: "bell" },
-    { id: "assistant", label: "Assistant", icon: "shield" },
+    { id: "assistant", label: "Ask Setu", icon: "pilgrim" },
   ];
 
   return (
@@ -118,13 +119,19 @@ export default function VolunteerApp() {
       )}
 
       {tab === "assistant" && (
-        <SevakAssistant
-          volunteer={volunteer}
-          zone={zone}
-          task={activeTask}
-          incident={activeIncident}
-          facilities={store.facilities}
-        />
+        <div className="flex-1 flex flex-col min-h-0">
+          <Link
+            href="/field"
+            className="flex items-center justify-between gap-2 px-4 py-2 border-b border-border bg-primary-soft text-primary-soft-ink text-xs font-medium"
+          >
+            <span className="flex items-center gap-1.5">
+              <Icon name="arrow-up-right" className="h-3.5 w-3.5" />
+              Open the full-screen Field Companion
+            </span>
+            <span className="text-[10px] uppercase tracking-wide opacity-70">voice-first</span>
+          </Link>
+          <SetuCompanion volunteerId={volunteer.id} variant="embedded" />
+        </div>
       )}
     </MobileShell>
   );

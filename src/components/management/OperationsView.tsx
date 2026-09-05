@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import type { Zone, Facility, Volunteer, Incident, RiskSnapshot } from "@/lib/types";
+import { useAppStore } from "@/store/useAppStore";
 import { OperationalMap } from "@/components/maps/OperationalMap";
 import { RealMapView } from "@/components/maps/RealMapView";
 import { MapLegend } from "@/components/maps/MapLegend";
 import { IncidentCard } from "@/components/incidents/IncidentCard";
 import { VolunteerList } from "@/components/management/VolunteerList";
 import { PulsePanel } from "@/components/pulse/PulsePanel";
-import { Panel, PanelHeader } from "@/components/ui/Panel";
+import { EmergingSignals } from "@/components/pulse/EmergingSignals";
+import { PanelHeader } from "@/components/ui/Panel";
 import { SimTag } from "@/components/ui/SimTag";
 
 export function OperationsView({
@@ -29,6 +31,9 @@ export function OperationsView({
   onIncidentClick: (id: string) => void;
 }) {
   const [mapMode, setMapMode] = useState<"abstract" | "gis">("abstract");
+  const emergingSignals = useAppStore((s) => s.emergingSignals);
+  const groundReports = useAppStore((s) => s.groundReports);
+  const promoteReportToIncident = useAppStore((s) => s.promoteReportToIncident);
 
   const activeIncidents = [...incidents]
     .filter((i) => !["resolved", "cancelled"].includes(i.status))
@@ -92,6 +97,18 @@ export function OperationsView({
           {riskSnapshots[topRiskZone.id] && <PulsePanel zone={topRiskZone} snapshot={riskSnapshots[topRiskZone.id]} compact />}
         </div>
         <div className="flex-1 overflow-y-auto scroll-thin p-4 space-y-4">
+          {emergingSignals.length > 0 && (
+            <div>
+              <PanelHeader title="Emerging Signals" subtitle="From volunteer field reports via Setu" />
+              <EmergingSignals
+                signals={emergingSignals}
+                reports={groundReports}
+                zones={zones}
+                onPromote={(id) => promoteReportToIncident(id)}
+                compact
+              />
+            </div>
+          )}
           <div>
             <PanelHeader title={`Active Incidents (${activeIncidents.length})`} />
             <div className="space-y-2">

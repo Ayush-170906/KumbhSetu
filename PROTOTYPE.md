@@ -38,7 +38,7 @@ Drive's Guidelines, 4-Towers framework, and Personas document:
 | "GIS mapping" | Real Leaflet/OSM map of the actual Nashik–Trimbakeshwar corridor, plus a real hospital/police reference layer from Nashik Monitor (NTKMA open data) | `RealMapView.tsx`, `ZONE_GEO`/`REAL_INFRASTRUCTURE` in `seed.ts` |
 | "Image to comment/complaint" | Pilgrim can snap a photo + note to report a facility issue; Volunteers can attach photo evidence to an active task — both land on the incident record Management sees | `ReportIssueScreen.tsx`, `TaskDetail.tsx`, `attachPhoto` in the store |
 | "Chat between volunteers" | A live per-zone volunteer coordination channel, synced the same way incidents are | `ZoneChat.tsx`, `sendZoneMessage` in the store |
-| "Agentic AI" | Two rule-based assistants that **act**, not just answer: the Pilgrim agent can jump straight into the SOS flow or the facility list; the volunteer "Sevak Assistant" answers task/protocol questions grounded in this session's real data. Neither calls an external LLM — there's no API key wired into this environment, and the guidelines explicitly require explaining every line shipped, so this is honestly rule-based intent routing, not a hosted model | `AssistantScreen.tsx`, `SevakAssistant.tsx` |
+| "Agentic AI" | The Pilgrim agent (`AssistantScreen.tsx`) acts, not just answers — it can jump into the SOS flow or the facility list. For volunteers this was superseded this round by **Setu, the AI Field Companion** (`src/ai/`, `src/components/setu/`) — voice-first, tool-calling, multilingual, with a confirm gate and an audit trail. Still no external LLM: a swappable provider interface with working offline mocks, per the "explain every line" rule. See §1b and `docs/AI_FIELD_COMPANION.md` | `AssistantScreen.tsx`, `src/ai/`, `src/components/setu/` |
 | Bhashini / multilingual | The EN/हिंदी/मराठी toggle is explicitly labeled "Bhashini-ready" — built to the same interface shape (translate on the client, keyed strings) that a Bhashini API integration would slot into later | `HomeScreen.tsx`, `src/lib/i18n.ts` |
 | "3 dashboards" | Confirmed and framed explicitly on the landing page — Pilgrim, Volunteer and Management are three separately routable, fully distinct experiences sharing one live backbone, not three views of the same screen | `RoleCards.tsx`, `/pilgrim` `/volunteer` `/management` |
 
@@ -48,6 +48,28 @@ hospitals/police posts pulled from Nashik Monitor's open GeoJSON
 government registries). They render on the Real Map as reference points only — they are
 deliberately NOT wired into the simulated dispatch/incident system, so simulated data is never
 presented as if it were live operational data from a real facility.
+
+## 1b. Setu — AI Field Companion (this round)
+
+A voice-first AI companion for volunteers, integrated into the existing product
+(new `/field` route + an "Ask Setu" tab in `/volunteer` + a "Field Reports" view
+in `/management`). It is **not** a separate app or a generic chatbot.
+
+| Capability | Where | Honest scope |
+|---|---|---|
+| Voice-first UI with a visible state machine (idle→listening→thinking→…) | `src/components/setu/`, `src/ai/useSetu.ts` | STT/TTS via the browser Web Speech API when present; full text fallback otherwise |
+| Intent detection over a 20-label taxonomy | `src/ai/intents.ts` | Transparent keyword/pattern scoring, not an LLM |
+| Tool-calling with read / low-write / high-write risk classes and a confirm gate | `src/ai/tools/` | High-impact actions never run without a tap; every action is audited |
+| Grounded answers (RAG stand-in) | `src/ai/knowledge/kb.ts` | Keyword retrieval over a synthetic verified KB; "no verified info" is a real outcome |
+| Live multilingual translation (EN/हिं/मर/தமிழ்) | `src/ai/providers/mockTranslationProvider.ts` | Bidirectional field phrasebook + word-by-word gloss; out-of-vocab is marked, never faked |
+| Voice + photo ground reporting → structured, human-confirmed | `SetuReportCard`, `create_ground_report` | Source / confidence / verification status on every report |
+| Kumbh Pulse emerging signals from field reports + pilgrim demand | `src/lib/signals.ts` | Decision support only; labelled synthetic; never auto-dispatches |
+| Offline report queue | store `queuedOffline` / `flushOfflineReports` | Reports saved locally and synced on reconnect |
+| Provider interfaces + working mocks | `src/ai/providers/` | `getProviders()` is the single swap point for a real model/STT/NMT — no key needed to run |
+| Reasoning-layer eval | `src/ai/eval/` (`npm run eval:setu`) | Intent, tool selection, structured output, safety, hallucination, latency |
+
+Full architecture, data model, prompt architecture, safety model and demo
+script: **`docs/AI_FIELD_COMPANION.md`**.
 
 ## 2. Architecture
 
@@ -69,9 +91,16 @@ src/
     dispatch.ts            Pure business logic: nearest-volunteer matching, risk scoring, ETA
     api.ts                 Mock API surface (getZones, createIncident, subscribeToRealtimeEvents, ...)
     incidentMeta.ts, format.ts   Shared display helpers
+    signals.ts             Kumbh Pulse emerging-signal aggregation (§20)
   store/
     useAppStore.ts         Single source of truth + all state transitions
     sync.ts                Cross-tab BroadcastChannel sync
+    persist.ts             localStorage persistence (survives a reload mid-demo)
+  ai/                      Setu AI Field Companion — see docs/AI_FIELD_COMPANION.md
+    providers/             AIProvider / Speech / Translation / Vision interfaces + offline mocks
+    tools/                 controlled tool layer (risk classes, authorize, validate, audit)
+    knowledge/, intents.ts, schemas.ts, prompts.ts, memory.ts, orchestrator.ts, useSetu.ts
+    eval/                  reasoning-layer eval suite (npm run eval:setu)
 ```
 
 The **only** stateful data layer is the Zustand store. `api.ts` is a thin async-wrapped façade

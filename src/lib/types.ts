@@ -103,7 +103,7 @@ export interface Incident {
   photoUrls?: string[];
 }
 
-export type LanguageCode = "en" | "hi" | "mr";
+export type LanguageCode = "en" | "hi" | "mr" | "ta";
 
 export type VolunteerAvailability = "available" | "on_task" | "off_duty";
 
@@ -234,4 +234,84 @@ export interface ZoneMessage {
   senderName: string;
   text: string;
   createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Setu AI Field Companion — ground truth & operational intelligence
+// ---------------------------------------------------------------------------
+
+/** What a field observation is about. Broader than IncidentType because most
+ * ground observations (water, sanitation, signage) are not incidents yet. */
+export type GroundReportCategory =
+  | "water"
+  | "food"
+  | "toilet"
+  | "medical"
+  | "crowd"
+  | "infrastructure"
+  | "safety"
+  | "lost_person"
+  | "accessibility"
+  | "other";
+
+/** Ground truth is never confused with verified operational fact (§19). A
+ * single volunteer observation starts UNVERIFIED; corroboration from other
+ * field reports moves it up the ladder; only an authorised operator VERIFIES. */
+export type VerificationStatus =
+  | "unverified"
+  | "reported"
+  | "corroborated"
+  | "verified"
+  | "resolved"
+  | "dismissed";
+
+export type ReportSeverity = "low" | "moderate" | "high";
+
+/** Where a piece of information came from, so the UI can always show it (§24). */
+export type EvidenceSource =
+  | "volunteer_observation"
+  | "pilgrim_request"
+  | "resource_data"
+  | "sensor"
+  | "ai_inference";
+
+export interface GroundReport {
+  id: string;
+  code: string; // "GR-4012"
+  category: GroundReportCategory;
+  zoneId: string;
+  position?: ZonePoint;
+  summary: string; // structured one-liner
+  detail?: string; // volunteer's own words
+  severity: ReportSeverity;
+  estimatedPeopleAffected?: number;
+  source: EvidenceSource;
+  reportedBy: { role: Role; id?: string; label: string };
+  status: VerificationStatus;
+  corroborations: number; // how many independent reports back this
+  photoUrls?: string[];
+  createdAt: string;
+  updatedAt: string;
+  /** Set once an operator promotes this report into a dispatchable incident. */
+  linkedIncidentId?: string;
+  /** True while this report is only stored locally and waiting for connectivity. */
+  queuedOffline?: boolean;
+  /** How confident the AI structuring step was in its own extraction (0-1). */
+  aiConfidence?: number;
+}
+
+/** Kumbh Pulse decision-support: several weak field signals aggregated into
+ * one thing worth a human's attention (§20). Never an automated action. */
+export interface EmergingSignal {
+  id: string;
+  category: GroundReportCategory;
+  zoneId: string;
+  headline: string;
+  confidence: number; // 0-1, from signal count + agreement
+  reportIds: string[];
+  pilgrimRequestCount: number;
+  resourceFlag?: string;
+  recommendedAction: string;
+  firstSeenAt: string;
+  lastUpdatedAt: string;
 }

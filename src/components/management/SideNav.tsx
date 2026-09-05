@@ -2,11 +2,19 @@
 
 import { Icon, type IconName } from "@/components/ui/Icon";
 
-export type ManagementView = "operations" | "pulse" | "analytics" | "log" | "advisories" | "lostfound";
+export type ManagementView =
+  | "operations"
+  | "pulse"
+  | "fieldreports"
+  | "analytics"
+  | "log"
+  | "advisories"
+  | "lostfound";
 
 const items: { id: ManagementView; label: string; icon: IconName }[] = [
   { id: "operations", label: "Live Operations", icon: "layers" },
   { id: "pulse", label: "Kumbh Pulse", icon: "pulse" },
+  { id: "fieldreports", label: "Field Reports", icon: "log" },
   { id: "advisories", label: "Advisories", icon: "bell" },
   { id: "lostfound", label: "Lost & Found", icon: "lost" },
   { id: "analytics", label: "Analytics", icon: "chart" },

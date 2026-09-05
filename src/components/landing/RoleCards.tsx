@@ -17,10 +17,15 @@ const roles: {
     icon: "pilgrim",
   },
   {
-    href: "/volunteer",
+    href: "/field",
     name: "Volunteer",
-    tagline: "A field operations tool, not a chat group.",
-    points: ["Task queue ranked by priority and distance", "Accept, navigate, arrive, resolve", "Availability and coordinator contact"],
+    tagline: "Setu — a voice-first AI field companion, not a chat group.",
+    points: [
+      "Speak naturally: ask, translate, report, or act",
+      "Live volunteer↔pilgrim translation (EN/हिं/मर/தமிழ்)",
+      "Voice ground reports that reach the control room + Kumbh Pulse",
+      "Task queue, accept/navigate/arrive/resolve",
+    ],
     icon: "volunteer",
   },
   {

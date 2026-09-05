@@ -32,6 +32,12 @@ const ACTION_KEYS = new Set([
   "confirmLostFoundMatch",
   "attachPhoto",
   "sendZoneMessage",
+  "createGroundReport",
+  "corroborateGroundReport",
+  "updateGroundReportStatus",
+  "promoteReportToIncident",
+  "flushOfflineReports",
+  "recordSetuAudit",
 ]);
 
 function extractData(state: object): Record<string, unknown> {

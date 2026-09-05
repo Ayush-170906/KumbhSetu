@@ -8,6 +8,15 @@ export const LANGUAGE_LABELS: Record<LanguageCode, string> = {
   en: "English",
   hi: "हिंदी",
   mr: "मराठी",
+  ta: "தமிழ்",
+};
+
+/** Endonym + English name, for language pickers in the field companion. */
+export const LANGUAGE_NAMES: Record<LanguageCode, string> = {
+  en: "English",
+  hi: "हिंदी (Hindi)",
+  mr: "मराठी (Marathi)",
+  ta: "தமிழ் (Tamil)",
 };
 
 const dict = {
@@ -31,10 +40,14 @@ const dict = {
   locationShared: { en: "Location shared", hi: "स्थान साझा किया गया", mr: "स्थान सामायिक केले" },
   volunteerNotified: { en: "Volunteer notified", hi: "स्वयंसेवक को सूचित किया गया", mr: "स्वयंसेवकाला कळवले" },
   managementNotified: { en: "Management notified", hi: "प्रबंधन को सूचित किया गया", mr: "व्यवस्थापनाला कळवले" },
-} satisfies Record<string, Record<LanguageCode, string>>;
+  // Tamil is not yet translated for the pilgrim Home/SOS strings — `t()` falls
+  // back to English. The Setu companion carries its own Tamil field phrasebook
+  // (src/ai/providers/mockTranslationProvider.ts) for live volunteer↔pilgrim use.
+} satisfies Record<string, Partial<Record<LanguageCode, string>>>;
 
 export type TranslationKey = keyof typeof dict;
 
 export function t(key: TranslationKey, language: LanguageCode): string {
-  return dict[key][language] ?? dict[key].en;
+  const entry = dict[key] as Partial<Record<LanguageCode, string>>;
+  return entry[language] ?? entry.en ?? key;
 }

@@ -23,10 +23,24 @@ single-page, three-pane guided walkthrough of the same scenario.
 | Route | Experience |
 |---|---|
 | `/` | Landing / product overview |
+| `/field` | **Setu — AI Field Companion.** Voice-first companion for volunteers: ask, translate, report and act, grounded in live data |
 | `/pilgrim` | Mobile-first pilgrim app — map, SOS, facilities, lost & found, assistant |
-| `/volunteer` | Field operations app — task queue, accept/navigate/arrive/resolve |
-| `/management` | Control room — live map, Kumbh Pulse, incidents, analytics, event log |
+| `/volunteer` | Field operations app — task queue, accept/navigate/arrive/resolve, "Ask Setu" tab |
+| `/management` | Control room — live map, Kumbh Pulse, incidents, **Field Reports**, analytics, event log |
 | `/demo` | Scripted, synchronized 3-pane demo of the full SOS → resolution loop |
+
+### Setu — AI Field Companion
+
+A voice-first AI companion for volunteers, integrated into the platform (not a
+separate app). Speak naturally — Setu detects intent, answers in the right
+language, retrieves verified knowledge, calls controlled tools (with a
+confirmation gate for anything high-impact), runs live volunteer↔pilgrim
+translation (EN/हिंदी/मराठी/தமிழ்), and turns field observations into structured
+ground reports that reach the control room and feed Kumbh Pulse signals.
+
+**No API key required** — every model / speech / translation provider is a local
+offline implementation behind a swappable interface. `npm run eval:setu` runs
+the reasoning-layer eval. Full write-up: [`docs/AI_FIELD_COMPANION.md`](docs/AI_FIELD_COMPANION.md).
 
 See `PROTOTYPE.md` for architecture, data model, what remains for a real pilot, and how each
 feature maps to Kumbhathon SPRINT's Tower 4 ("Pilgrim Experience") judged problem statements —

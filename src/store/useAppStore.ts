@@ -22,7 +22,14 @@ import type {
   FoundReport,
   LanguageCode,
   ZoneMessage,
+  GroundReport,
+  GroundReportCategory,
+  ReportSeverity,
+  EvidenceSource,
+  VerificationStatus,
+  EmergingSignal,
 } from "@/lib/types";
+import { deriveEmergingSignals } from "@/lib/signals";
 import {
   ZONES,
   FACILITIES,
@@ -45,6 +52,7 @@ import {
   requiredSkillFor,
   textMatchScore,
 } from "@/lib/dispatch";
+import { loadPersistedState, initPersistence } from "./persist";
 
 const MODEL_VERSION = "pulse-rule-v0.3";
 const BASELINE_RISK: Record<string, RiskSnapshot> = RISK_SNAPSHOTS;
@@ -55,6 +63,30 @@ function clone<T>(value: T): T {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+/**
+ * Approximates "pilgrim demand" per category+zone for the Kumbh Pulse signal
+ * model — pilgrim-reported incidents are treated as demand signals that can
+ * corroborate a volunteer's ground report (§20). Keyed "category::zoneId".
+ */
+function pilgrimRequestTally(incidents: Incident[]): Record<string, number> {
+  const map: Record<IncidentType, GroundReportCategory> = {
+    medical: "medical",
+    lost_person: "lost_person",
+    crowd_pressure: "crowd",
+    security: "safety",
+    facility: "infrastructure",
+    other: "other",
+  };
+  const tally: Record<string, number> = {};
+  for (const i of incidents) {
+    if (i.reportedBy.role !== "pilgrim") continue;
+    if (["resolved", "cancelled"].includes(i.status)) continue;
+    const key = `${map[i.type]}::${i.zoneId}`;
+    tally[key] = (tally[key] ?? 0) + 1;
+  }
+  return tally;
 }
 
 export interface ReportIncidentInput {
@@ -74,6 +106,29 @@ export interface PublishAdvisoryInput {
   issuedBy: string;
 }
 
+export interface CreateGroundReportInput {
+  category: GroundReportCategory;
+  zoneId: string;
+  position?: ZonePoint;
+  summary: string;
+  detail?: string;
+  severity: ReportSeverity;
+  estimatedPeopleAffected?: number;
+  source: EvidenceSource;
+  reportedBy: { role: Role; id?: string; label: string };
+  photoUrls?: string[];
+  aiConfidence?: number;
+  queuedOffline?: boolean;
+}
+
+export interface SetuAuditInput {
+  actor: string;
+  action: string;
+  entity: string;
+  entityId: string;
+  metadata?: string;
+}
+
 export interface DemoLogEntry {
   id: string;
   time: string;
@@ -90,7 +145,7 @@ interface DemoState {
   activeTaskId?: string;
 }
 
-interface AppState {
+export interface AppState {
   zones: Zone[];
   facilities: Facility[];
   volunteers: Volunteer[];
@@ -110,6 +165,9 @@ interface AppState {
   foundReports: FoundReport[];
   language: LanguageCode;
   messages: ZoneMessage[];
+  groundReports: GroundReport[];
+  groundReportSeq: number;
+  emergingSignals: EmergingSignal[];
 
   initSimulation: () => void;
   tick: () => void;
@@ -124,6 +182,13 @@ interface AppState {
 
   attachPhoto: (incidentId: string, dataUrl: string, actor: string) => void;
   sendZoneMessage: (input: { zoneId: string; senderId: string; senderName: string; text: string }) => void;
+
+  createGroundReport: (input: CreateGroundReportInput) => GroundReport;
+  corroborateGroundReport: (reportId: string, by: string) => void;
+  updateGroundReportStatus: (reportId: string, status: VerificationStatus, actor?: string) => void;
+  promoteReportToIncident: (reportId: string, actor?: string) => Incident | undefined;
+  flushOfflineReports: () => void;
+  recordSetuAudit: (input: SetuAuditInput) => void;
 
   createIncident: (input: ReportIncidentInput) => Incident;
   triageIncident: (incidentId: string) => void;
@@ -185,26 +250,49 @@ function recalcZoneRisk(get: () => AppState, set: (fn: (s: AppState) => Partial<
   });
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+const defaultData = {
   zones: clone(ZONES),
   facilities: clone(FACILITIES),
   volunteers: clone(VOLUNTEERS),
   incidents: clone(INITIAL_INCIDENTS),
-  tasks: [],
+  tasks: [] as Task[],
   riskSnapshots: clone(RISK_SNAPSHOTS),
   riskHistory: Object.fromEntries(ZONES.map((z) => [z.id, [RISK_SNAPSHOTS[z.id]?.score ?? z.riskScore]])),
   resources: clone(RESOURCES),
-  notifications: [],
+  notifications: [] as Notification[],
   auditLog: clone(AUDIT_SEED),
-  systemStatus: { mode: "simulation", connectivity: "nominal", lastSyncAt: nowIso() },
+  systemStatus: { mode: "simulation", connectivity: "nominal", lastSyncAt: nowIso() } as SystemStatus,
   incidentSeq: 2, // seed already used ks-1039, next fresh incident starts at 1040
   simTickCount: 0,
   simulationRunning: false,
-  demo: { running: false, completed: false, stepIndex: 0, totalSteps: 6, log: [] },
+  demo: { running: false, completed: false, stepIndex: 0, totalSteps: 6, log: [] } as DemoState,
   advisories: clone(INITIAL_ADVISORIES),
   foundReports: clone(INITIAL_FOUND_REPORTS),
-  language: "en",
-  messages: [],
+  language: "en" as LanguageCode,
+  messages: [] as ZoneMessage[],
+  groundReports: [] as GroundReport[],
+  groundReportSeq: 0,
+  emergingSignals: [] as EmergingSignal[],
+};
+
+// Restore a prior session's incidents/tasks/etc. (if any) so a page reload
+// mid-demo doesn't silently wipe progress. A demo that was mid-flight when
+// the page unloaded can't have its setTimeout chain resume, so it's always
+// un-paused back to "not running" rather than shown stuck. The ambient
+// simulation interval lives in module state that a reload clears too, so
+// simulationRunning is likewise reset — Management re-arms it via initSimulation().
+const persisted = loadPersistedState();
+const initialData = persisted
+  ? {
+      ...defaultData,
+      ...persisted,
+      simulationRunning: false,
+      demo: { ...defaultData.demo, ...(persisted.demo as Partial<DemoState> | undefined), running: false },
+    }
+  : defaultData;
+
+export const useAppStore = create<AppState>((set, get) => ({
+  ...initialData,
 
   setLanguage: (language) => set(() => ({ language })),
 
@@ -240,6 +328,212 @@ export const useAppStore = create<AppState>((set, get) => ({
       createdAt: nowIso(),
     };
     set((s) => ({ messages: [...s.messages, message].slice(-100) }));
+  },
+
+  createGroundReport: (input) => {
+    const seq = get().groundReportSeq + 1;
+    const now = nowIso();
+    const report: GroundReport = {
+      id: `gr-${4000 + seq}`,
+      code: `GR-${4000 + seq}`,
+      category: input.category,
+      zoneId: input.zoneId,
+      position: input.position,
+      summary: input.summary,
+      detail: input.detail,
+      severity: input.severity,
+      estimatedPeopleAffected: input.estimatedPeopleAffected,
+      source: input.source,
+      reportedBy: input.reportedBy,
+      status: input.queuedOffline ? "unverified" : "reported",
+      corroborations: 1,
+      photoUrls: input.photoUrls,
+      createdAt: now,
+      updatedAt: now,
+      queuedOffline: input.queuedOffline,
+      aiConfidence: input.aiConfidence,
+    };
+
+    set((s) => {
+      const groundReports = [report, ...s.groundReports];
+      return {
+        groundReports,
+        groundReportSeq: seq,
+        emergingSignals: deriveEmergingSignals(groundReports, s.resources, s.zones, pilgrimRequestTally(s.incidents)),
+        auditLog: [
+          {
+            id: `ae-${report.id}`,
+            actor: input.reportedBy.label,
+            action: input.queuedOffline ? "GROUND_REPORT_QUEUED_OFFLINE" : "GROUND_REPORT_CREATED",
+            entity: "groundReport",
+            entityId: report.id,
+            timestamp: now,
+            metadata: `${report.category} · ${report.severity}${report.estimatedPeopleAffected ? ` · ~${report.estimatedPeopleAffected} affected` : ""}`,
+          },
+          ...s.auditLog,
+        ],
+        notifications: input.queuedOffline
+          ? s.notifications
+          : [
+              {
+                id: `n-${report.id}-mgmt`,
+                recipientRole: "management" as Role,
+                channel: "in_app" as const,
+                title: `Field report ${report.code}`,
+                body: report.summary,
+                event: "ground_report",
+                createdAt: now,
+                deliveryState: "delivered" as const,
+              },
+              ...s.notifications,
+            ],
+      };
+    });
+
+    return report;
+  },
+
+  corroborateGroundReport: (reportId, by) => {
+    set((s) => {
+      const groundReports = s.groundReports.map((r) =>
+        r.id === reportId
+          ? {
+              ...r,
+              corroborations: r.corroborations + 1,
+              status: r.status === "unverified" || r.status === "reported" ? ("corroborated" as VerificationStatus) : r.status,
+              updatedAt: nowIso(),
+            }
+          : r
+      );
+      return {
+        groundReports,
+        emergingSignals: deriveEmergingSignals(groundReports, s.resources, s.zones, pilgrimRequestTally(s.incidents)),
+        auditLog: [
+          {
+            id: `ae-corrob-${reportId}-${Date.now()}`,
+            actor: by,
+            action: "GROUND_REPORT_CORROBORATED",
+            entity: "groundReport",
+            entityId: reportId,
+            timestamp: nowIso(),
+          },
+          ...s.auditLog,
+        ],
+      };
+    });
+  },
+
+  updateGroundReportStatus: (reportId, status, actor = "Control Room") => {
+    set((s) => {
+      const groundReports = s.groundReports.map((r) =>
+        r.id === reportId ? { ...r, status, updatedAt: nowIso() } : r
+      );
+      return {
+        groundReports,
+        emergingSignals: deriveEmergingSignals(groundReports, s.resources, s.zones, pilgrimRequestTally(s.incidents)),
+        auditLog: [
+          {
+            id: `ae-grstatus-${reportId}-${Date.now()}`,
+            actor,
+            action: `GROUND_REPORT_${status.toUpperCase()}`,
+            entity: "groundReport",
+            entityId: reportId,
+            timestamp: nowIso(),
+          },
+          ...s.auditLog,
+        ],
+      };
+    });
+  },
+
+  promoteReportToIncident: (reportId, actor = "Control Room") => {
+    const report = get().groundReports.find((r) => r.id === reportId);
+    if (!report || report.linkedIncidentId) return get().incidents.find((i) => i.id === report?.linkedIncidentId);
+
+    const typeMap: Record<GroundReportCategory, IncidentType> = {
+      water: "facility",
+      food: "facility",
+      toilet: "facility",
+      infrastructure: "facility",
+      accessibility: "facility",
+      medical: "medical",
+      crowd: "crowd_pressure",
+      safety: "security",
+      lost_person: "lost_person",
+      other: "other",
+    };
+    const sevMap: Record<ReportSeverity, IncidentSeverity> = { low: "low", moderate: "moderate", high: "critical" };
+
+    const incident = get().createIncident({
+      type: typeMap[report.category],
+      severity: sevMap[report.severity],
+      zoneId: report.zoneId,
+      position: report.position,
+      reportedBy: { role: "management", label: `${actor} (from ${report.code})` },
+      summary: report.summary,
+    });
+
+    set((s) => ({
+      groundReports: s.groundReports.map((r) =>
+        r.id === reportId ? { ...r, linkedIncidentId: incident.id, status: "verified" as VerificationStatus, updatedAt: nowIso() } : r
+      ),
+      auditLog: [
+        {
+          id: `ae-promote-${reportId}-${Date.now()}`,
+          actor,
+          action: "GROUND_REPORT_PROMOTED_TO_INCIDENT",
+          entity: "incident",
+          entityId: incident.id,
+          timestamp: nowIso(),
+          metadata: report.code,
+        },
+        ...s.auditLog,
+      ],
+    }));
+    return incident;
+  },
+
+  flushOfflineReports: () => {
+    set((s) => {
+      const queued = s.groundReports.filter((r) => r.queuedOffline);
+      if (queued.length === 0) return s;
+      const groundReports = s.groundReports.map((r) =>
+        r.queuedOffline ? { ...r, queuedOffline: false, status: r.status === "unverified" ? ("reported" as VerificationStatus) : r.status, updatedAt: nowIso() } : r
+      );
+      return {
+        groundReports,
+        emergingSignals: deriveEmergingSignals(groundReports, s.resources, s.zones, pilgrimRequestTally(s.incidents)),
+        auditLog: [
+          {
+            id: `ae-flush-${Date.now()}`,
+            actor: "system",
+            action: "OFFLINE_REPORTS_SYNCED",
+            entity: "system",
+            entityId: "-",
+            timestamp: nowIso(),
+            metadata: `${queued.length} queued report${queued.length === 1 ? "" : "s"} synced`,
+          },
+          ...s.auditLog,
+        ],
+      };
+    });
+  },
+
+  recordSetuAudit: (input) => {
+    set((s) => ({
+      auditLog: [
+        {
+          id: `ae-setu-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          actor: input.actor,
+          action: input.action,
+          entity: input.entity,
+          entityId: input.entityId,
+          timestamp: nowIso(),
+          metadata: input.metadata,
+        },
+        ...s.auditLog,
+      ],
+    }));
   },
 
   publishAdvisory: (input) => {
@@ -794,6 +1088,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       advisories: clone(INITIAL_ADVISORIES),
       foundReports: clone(INITIAL_FOUND_REPORTS),
       messages: [],
+      groundReports: [],
+      groundReportSeq: 0,
+      emergingSignals: [],
     }));
   },
 }));
+
+initPersistence(useAppStore);
