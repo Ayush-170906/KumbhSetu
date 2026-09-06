@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, type ReactNode } from "react";
+import { useCallback, useMemo, useRef, type ReactNode } from "react";
 import type { LanguageCode } from "@/lib/types";
 import { LANGUAGE_LABELS } from "@/lib/i18n";
 import { Icon } from "@/components/ui/Icon";
@@ -15,6 +15,22 @@ import { SetuReportCard } from "./SetuReportCard";
 import { SetuTranslatePanel } from "./SetuTranslatePanel";
 
 const LANGS: LanguageCode[] = ["en", "hi", "mr", "ta"];
+
+// Chips that name a fixed workflow are dispatched deterministically on the
+// client — they must NOT go through the LLM. Right now that's only the
+// "Help me talk to a <language>-speaking pilgrim" translation-relay chip.
+const LANG_NAME_TO_CODE: Record<string, LanguageCode> = {
+  english: "en",
+  hindi: "hi",
+  marathi: "mr",
+  tamil: "ta",
+};
+
+/** Returns a language code if `chip` is the translation-relay chip, else null. */
+function translationChipLanguage(chip: string): LanguageCode | null {
+  const m = chip.match(/talk to an?\s+([a-z]+)[- ]speaking/i);
+  return m ? LANG_NAME_TO_CODE[m[1].toLowerCase()] ?? null : null;
+}
 
 export function SetuCompanion({
   persona = "volunteer",
@@ -68,6 +84,20 @@ export function SetuCompanion({
     if (reportDraft && reportDraft.missing.length > 0) return []; // let them answer the follow-up
     return spec.chips;
   }, [reportDraft, spec]);
+
+  // A chip press: workflow chips run deterministically (no Sarvam call); every
+  // other chip goes through the normal text turn (LLM + tool calling intact).
+  const handleChip = useCallback(
+    (chip: string) => {
+      const lang = translationChipLanguage(chip);
+      if (lang && lang !== volunteerLanguage) {
+        setu.swapTranslation(lang); // opens the translation panel with that language
+        return;
+      }
+      setu.sendText(chip);
+    },
+    [setu, volunteerLanguage]
+  );
 
   function toggleListen() {
     if (status === "listening") return setu.stopListening();
@@ -241,6 +271,7 @@ export function SetuCompanion({
             : "Type, or use the camera…"
         }
         onSend={setu.sendText}
+        onChip={handleChip}
         onPhoto={persona === "volunteer" ? setu.sendPhoto : undefined}
         inputRef={composerRef}
       />
