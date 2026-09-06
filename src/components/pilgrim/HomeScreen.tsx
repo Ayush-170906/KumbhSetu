@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { Zone, RiskSnapshot, Facility, Advisory, LanguageCode } from "@/lib/types";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { StatusPill, bandLabel } from "@/components/ui/StatusPill";
@@ -162,6 +163,17 @@ export function HomeScreen({
           ))}
         </div>
       </div>
+
+      <Link
+        href="/board"
+        className="mx-4 mt-6 flex items-center justify-between gap-2 rounded-sm border border-border bg-surface px-3 py-2.5 text-xs text-ink-muted hover:border-primary transition-colors"
+      >
+        <span className="flex items-center gap-2">
+          <Icon name="layers" className="h-4 w-4 text-ink-soft" />
+          Common Operations Board — live incidents, notices &amp; helplines
+        </span>
+        <Icon name="chevron-right" className="h-4 w-4 text-ink-soft" />
+      </Link>
     </div>
   );
 }

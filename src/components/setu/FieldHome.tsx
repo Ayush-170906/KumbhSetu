@@ -84,6 +84,7 @@ export function FieldHome() {
         <nav className="shrink-0 flex items-center justify-around border-t border-border bg-surface py-1.5">
           <TabLink href="/field" label="Companion" icon="pilgrim" active />
           <TabLink href="/volunteer" label="Tasks" icon="volunteer" />
+          <TabLink href="/board" label="Board" icon="layers" />
           <TabLink href="/management" label="Control Room" icon="management" />
         </nav>
       </div>

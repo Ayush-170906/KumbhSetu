@@ -42,16 +42,26 @@ export default function VolunteerApp() {
     <MobileShell
       title="Kumbh Setu · Field"
       right={
-        <select
-          value={volunteerId}
-          onChange={(e) => setVolunteerId(e.target.value)}
-          className="text-[11px] text-ink-muted bg-transparent border border-border rounded-sm px-1.5 py-1 focus:outline-none"
-          title="Simulate as volunteer"
-        >
-          {store.volunteers.map((v) => (
-            <option key={v.id} value={v.id}>{v.id}</option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/board"
+            className="flex items-center gap-1 text-[11px] text-ink-soft hover:text-ink"
+            title="Common Operations Board"
+          >
+            <Icon name="layers" className="h-3.5 w-3.5" />
+            Board
+          </Link>
+          <select
+            value={volunteerId}
+            onChange={(e) => setVolunteerId(e.target.value)}
+            className="text-[11px] text-ink-muted bg-transparent border border-border rounded-sm px-1.5 py-1 focus:outline-none"
+            title="Simulate as volunteer"
+          >
+            {store.volunteers.map((v) => (
+              <option key={v.id} value={v.id}>{v.id}</option>
+            ))}
+          </select>
+        </div>
       }
     >
       <AvailabilityHeader
