@@ -13,12 +13,15 @@ export function SetuTranscript({
   volunteerLanguage,
   speakEnabled,
   onSpeak,
+  assistantName = "Kumbh Setu AI",
 }: {
   messages: SetuMessage[];
   partial?: string;
   volunteerLanguage: LanguageCode;
   speakEnabled?: boolean;
   onSpeak?: (text: string, lang?: LanguageCode) => void;
+  /** Role-specific name shown on assistant bubbles. */
+  assistantName?: string;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +38,7 @@ export function SetuTranscript({
           volunteerLanguage={volunteerLanguage}
           speakEnabled={speakEnabled}
           onSpeak={onSpeak}
+          assistantName={assistantName}
         />
       ))}
       {partial && (
@@ -55,11 +59,13 @@ function Bubble({
   volunteerLanguage,
   speakEnabled,
   onSpeak,
+  assistantName,
 }: {
   m: SetuMessage;
   volunteerLanguage: LanguageCode;
   speakEnabled?: boolean;
   onSpeak?: (text: string, lang?: LanguageCode) => void;
+  assistantName: string;
 }) {
   if (m.role === "user") {
     return (
@@ -101,7 +107,7 @@ function Bubble({
         <div className="flex items-center gap-1.5 mb-1">
           <Icon name={emergency ? "warning" : "pilgrim"} className="h-3.5 w-3.5 shrink-0" />
           <span className="text-[9.5px] font-semibold uppercase tracking-wide opacity-70">
-            Kumbh Setu AI
+            {assistantName}
             {m.intent && m.intent !== "other" ? ` · ${INTENT_LABELS[m.intent]}` : ""}
           </span>
         </div>

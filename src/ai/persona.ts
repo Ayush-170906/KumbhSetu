@@ -42,7 +42,7 @@ export const PERSONAS: Record<SetuPersona, PersonaSpec> = {
   pilgrim: {
     role: "pilgrim",
     audience: "pilgrim",
-    title: "Kumbh Setu AI",
+    title: "Kumbh Setu Assistant",
     subtitle: "Ask about facilities, routes, darshan and safety",
     emptyHint: "Ask a question, or tap a suggestion. Setu can also translate.",
     chips: [
@@ -60,9 +60,9 @@ export const PERSONAS: Record<SetuPersona, PersonaSpec> = {
   volunteer: {
     role: "volunteer",
     audience: "volunteer",
-    title: "Kumbh Setu AI",
+    title: "Setu AI",
     subtitle: "Voice-first field companion",
-    emptyHint: "Ask, translate, or send a photo — Kumbh Setu AI",
+    emptyHint: "Ask, translate, or send a photo — Setu AI",
     chips: [
       "Nearest medical camp",
       "What's happening in my zone",
@@ -89,7 +89,7 @@ export const PERSONAS: Record<SetuPersona, PersonaSpec> = {
   management: {
     role: "management",
     audience: "management",
-    title: "Kumbh Setu AI · Operations",
+    title: "Ops Copilot",
     subtitle: "Control-room copilot — one question, the whole ground",
     emptyHint: "Ask for the overview, a zone, the signals, or draft an advisory.",
     chips: [

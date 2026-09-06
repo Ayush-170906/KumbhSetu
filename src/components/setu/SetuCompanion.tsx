@@ -181,6 +181,9 @@ export function SetuCompanion({
           <div className="text-center">
             <div className="text-[12px] font-semibold uppercase tracking-[0.16em] text-ink">{spec.title}</div>
             <div className="text-xs text-ink-muted mt-0.5">{spec.subtitle}</div>
+            <div className="mt-1.5 text-[10px] text-ink-soft">
+              Powered by Sarvam · Grounded in Kumbh Setu data
+            </div>
           </div>
           <SetuOrb
             status={status}
@@ -217,6 +220,7 @@ export function SetuCompanion({
             volunteerLanguage={volunteerLanguage}
             speakEnabled={voiceOutputAvailable}
             onSpeak={setu.speakAloud}
+            assistantName={spec.title}
           />
           {reportDraft && (
             <SetuReportCard

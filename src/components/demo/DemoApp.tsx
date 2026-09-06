@@ -33,7 +33,7 @@ export default function DemoApp() {
         <span className="text-xs text-ink-soft">/ Demo</span>
         <div className="ml-auto flex items-center gap-3 text-xs">
           <Link href="/pilgrim" className="text-ink-muted hover:text-ink">Open Pilgrim</Link>
-          <Link href="/volunteer" className="text-ink-muted hover:text-ink">Open Volunteer</Link>
+          <Link href="/field?tab=tasks" className="text-ink-muted hover:text-ink">Open Volunteer</Link>
           <Link href="/management" className="text-ink-muted hover:text-ink">Open Management</Link>
         </div>
       </div>

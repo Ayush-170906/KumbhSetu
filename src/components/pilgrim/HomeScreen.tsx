@@ -19,7 +19,6 @@ const actions: { screen: PilgrimScreen; key: Parameters<typeof t>[0]; icon: Icon
   { screen: "family", key: "familyGroup", icon: "pilgrim" },
   { screen: "epass", key: "entryPass", icon: "qr" },
   { screen: "report-issue", key: "reportIssue", icon: "warning" },
-  { screen: "assistant", key: "askAssistant", icon: "bell" },
 ];
 
 function greetingKey(): Parameters<typeof t>[0] {
@@ -84,6 +83,26 @@ export function HomeScreen({
           </select>
         </div>
       </div>
+
+      {/* Kumbh Setu Assistant — the primary way to get help, first on the page */}
+      <button
+        onClick={() => onNavigate("assistant")}
+        className="mx-4 mt-4 w-[calc(100%-2rem)] flex items-center gap-3 rounded-xl border border-primary/35 bg-gradient-to-br from-primary-soft/80 to-surface px-4 py-3.5 text-left tile"
+      >
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-primary text-white">
+          <Icon name="pulse" className="h-5 w-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold text-ink">{t("askAssistant", language)}</div>
+          <div className="text-[11.5px] text-ink-muted leading-snug mt-0.5">
+            Facilities, routes, darshan, safety — speak or type, in your language.
+          </div>
+          <div className="text-[9.5px] uppercase tracking-[0.1em] text-ink-soft mt-1">
+            Powered by Sarvam
+          </div>
+        </div>
+        <Icon name="chevron-right" className="h-4 w-4 text-primary shrink-0" />
+      </button>
 
       <SnanBanner className="mx-4 mt-3" />
 

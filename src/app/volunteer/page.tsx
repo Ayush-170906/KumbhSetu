@@ -1,19 +1,9 @@
-import { ClientOnly } from "@/components/ui/ClientOnly";
-import { AuthGate } from "@/components/auth/AuthGate";
-import VolunteerApp from "@/components/volunteer/VolunteerApp";
+import { redirect } from "next/navigation";
 
+/**
+ * The volunteer experience was merged into /field (Setu AI / Tasks / Team as
+ * tabs on one surface). This legacy route redirects so old links keep working.
+ */
 export default function VolunteerPage() {
-  return (
-    <ClientOnly
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-ivory text-ink-muted text-sm">
-          Loading field app…
-        </div>
-      }
-    >
-      <AuthGate area="volunteer">
-        <VolunteerApp />
-      </AuthGate>
-    </ClientOnly>
-  );
+  redirect("/field?tab=tasks");
 }
