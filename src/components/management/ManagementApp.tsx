@@ -17,6 +17,7 @@ import { ZoneIntelligence } from "@/components/maps/ZoneIntelligence";
 import { IncidentDetail } from "@/components/incidents/IncidentDetail";
 import { SetuCompanion } from "@/components/setu/SetuCompanion";
 import { SecurityView } from "@/components/security/SecurityView";
+import { CityDirectoryView } from "./CityDirectoryView";
 
 export default function ManagementApp() {
   const store = useAppStore();
@@ -78,6 +79,12 @@ export default function ManagementApp() {
         {view === "security" && (
           <div className="flex-1 overflow-y-auto scroll-thin">
             <SecurityView />
+          </div>
+        )}
+
+        {view === "directory" && (
+          <div className="flex-1 overflow-y-auto scroll-thin">
+            <CityDirectoryView />
           </div>
         )}
 

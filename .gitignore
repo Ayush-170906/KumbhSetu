@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# raw Nashik Monitor GeoJSON (build input only — see data/nashik-monitor/SOURCE.md)
+data/nashik-monitor/*.geojson
