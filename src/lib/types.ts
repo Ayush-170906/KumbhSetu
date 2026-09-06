@@ -107,6 +107,17 @@ export type LanguageCode = "en" | "hi" | "mr" | "ta";
 
 export type VolunteerAvailability = "available" | "on_task" | "off_duty";
 
+/** How a volunteer commits time. A working professional sets their own dated
+ * slots; a general volunteer takes a standing shift. */
+export type VolunteerKind = "professional" | "general";
+
+export interface AvailabilitySlot {
+  id: string;
+  date: string; // ISO yyyy-mm-dd
+  start: string; // "14:00"
+  end: string; // "18:00"
+}
+
 export interface Volunteer {
   id: string; // "V-218"
   name: string;
@@ -119,6 +130,13 @@ export interface Volunteer {
   shiftEnd: string;
   lastSeen: string;
   activeTaskId?: string;
+  /** Enrollment fields (self-registered or added by management). */
+  kind?: VolunteerKind;
+  phone?: string;
+  /** Working-professional volunteers: the specific windows they've committed. */
+  slots?: AvailabilitySlot[];
+  enrolledAt?: string;
+  enrolledBy?: "self" | "management";
 }
 
 export type TaskState =

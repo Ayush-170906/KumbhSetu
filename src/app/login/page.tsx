@@ -135,7 +135,15 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-[10px] text-ink-soft mt-4 leading-relaxed">
+          <p className="text-xs text-ink-muted mt-4">
+            New volunteer?{" "}
+            <Link href="/enroll" className="text-primary hover:text-primary-dark font-medium">
+              Enroll here
+            </Link>{" "}
+            — add your details and availability.
+          </p>
+
+          <p className="text-[10px] text-ink-soft mt-3 leading-relaxed">
             Prototype sign-in only — no real accounts, no server. All demo passwords are{" "}
             <span className="font-mono-num">kumbh2027</span>. Session is per-tab.
           </p>

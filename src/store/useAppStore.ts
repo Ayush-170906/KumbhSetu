@@ -6,6 +6,8 @@ import type {
   Facility,
   Volunteer,
   VolunteerAvailability,
+  VolunteerKind,
+  AvailabilitySlot,
   Incident,
   IncidentType,
   IncidentSeverity,
@@ -97,6 +99,20 @@ export interface ReportIncidentInput {
   reportedBy: { role: Role; label: string };
   summary: string;
   preferredLanguage?: LanguageCode;
+}
+
+export interface EnrollVolunteerInput {
+  name: string;
+  phone?: string;
+  zoneId: string;
+  kind: VolunteerKind;
+  skills: string[];
+  languages: LanguageCode[];
+  /** professional: dated windows; general: a standing shift start/end. */
+  slots?: AvailabilitySlot[];
+  shiftStart?: string;
+  shiftEnd?: string;
+  enrolledBy?: "self" | "management";
 }
 
 export interface PublishAdvisoryInput {
@@ -200,6 +216,7 @@ export interface AppState {
   arriveTask: (taskId: string) => void;
   resolveTask: (taskId: string, outcome?: "resolved" | "escalated") => void;
   setVolunteerAvailability: (volunteerId: string, availability: VolunteerAvailability) => void;
+  enrollVolunteer: (input: EnrollVolunteerInput) => Volunteer;
 
   startDemo: () => void;
   resetDemo: () => void;
@@ -983,6 +1000,50 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((s) => ({
       volunteers: s.volunteers.map((v) => (v.id === volunteerId ? { ...v, availability } : v)),
     }));
+  },
+
+  enrollVolunteer: (input) => {
+    const s = get();
+    // next V-### after the highest existing numeric id
+    const maxNum = s.volunteers.reduce((m, v) => {
+      const n = Number(v.id.replace(/\D/g, ""));
+      return Number.isFinite(n) && n > m ? n : m;
+    }, 100);
+    const id = `V-${maxNum + 1}`;
+    const zone = ZONES.find((z) => z.id === input.zoneId) ?? ZONES[0];
+    const volunteer: Volunteer = {
+      id,
+      name: input.name.trim() || id,
+      zoneId: zone.id,
+      position: { ...zone.labelPoint },
+      availability: "available",
+      skills: input.skills,
+      languages: input.languages.length ? input.languages : ["mr"],
+      shiftStart: input.kind === "general" ? input.shiftStart ?? "10:00" : input.slots?.[0]?.start ?? "",
+      shiftEnd: input.kind === "general" ? input.shiftEnd ?? "18:00" : input.slots?.[input.slots.length - 1]?.end ?? "",
+      lastSeen: "just now",
+      kind: input.kind,
+      phone: input.phone?.trim() || undefined,
+      slots: input.kind === "professional" ? input.slots ?? [] : undefined,
+      enrolledAt: nowIso(),
+      enrolledBy: input.enrolledBy ?? "self",
+    };
+    set((st) => ({
+      volunteers: [...st.volunteers, volunteer],
+      auditLog: [
+        {
+          id: `ae-enroll-${id}-${Date.now()}`,
+          actor: input.enrolledBy === "management" ? "Control Room" : volunteer.name,
+          action: "VOLUNTEER_ENROLLED",
+          entity: "volunteer",
+          entityId: id,
+          timestamp: nowIso(),
+          metadata: `${input.kind} · ${zone.shortName}${input.kind === "professional" ? ` · ${volunteer.slots?.length ?? 0} slot(s)` : ""}`,
+        },
+        ...st.auditLog,
+      ],
+    }));
+    return volunteer;
   },
 
   startDemo: () => {

@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
+
+// A store that is `false` on the server / first client render and `true`
+// after hydration — without calling setState inside an effect.
+const emptySubscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 /**
  * Renders children only after client-side mount. Used for the three live
@@ -9,8 +15,6 @@ import { useEffect, useState, type ReactNode } from "react";
  * and client render passes.
  */
 export function ClientOnly({ children, fallback = null }: { children: ReactNode; fallback?: ReactNode }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return <>{fallback}</>;
-  return <>{children}</>;
+  const mounted = useSyncExternalStore(emptySubscribe, getSnapshot, getServerSnapshot);
+  return <>{mounted ? children : fallback}</>;
 }

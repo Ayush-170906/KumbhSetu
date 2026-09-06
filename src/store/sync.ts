@@ -22,6 +22,7 @@ const ACTION_KEYS = new Set([
   "arriveTask",
   "resolveTask",
   "setVolunteerAvailability",
+  "enrollVolunteer",
   "startDemo",
   "resetDemo",
   "resetAll",

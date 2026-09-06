@@ -15,9 +15,24 @@ export function VolunteerList({ volunteers, zones }: { volunteers: Volunteer[]; 
     <div className="space-y-1.5">
       {sorted.map((v) => (
         <div key={v.id} className="flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0">
-          <div>
-            <div className="font-medium text-ink">{v.id} · {v.name}</div>
-            <div className="text-ink-soft">{zoneName(v.zoneId)}</div>
+          <div className="min-w-0">
+            <div className="font-medium text-ink">
+              {v.id} · {v.name}
+              {v.kind && (
+                <span className="ml-1.5 text-[9px] uppercase tracking-wide text-ink-soft border border-border rounded-sm px-1 py-px">
+                  {v.kind === "professional" ? "PRO" : "GEN"}
+                </span>
+              )}
+            </div>
+            <div className="text-ink-soft truncate">
+              {zoneName(v.zoneId)}
+              {v.kind === "professional" && v.slots?.length
+                ? ` · ${v.slots.length} slot${v.slots.length === 1 ? "" : "s"}`
+                : v.shiftStart
+                ? ` · ${v.shiftStart}–${v.shiftEnd}`
+                : ""}
+              {v.enrolledBy ? " · self-enrolled" : ""}
+            </div>
           </div>
           <StatusPill tone={toneMap[v.availability]}>{labelMap[v.availability]}</StatusPill>
         </div>
