@@ -57,6 +57,13 @@ export function TopStatusBar({
 
       <div className="ml-auto flex items-center gap-4 shrink-0">
         <Link
+          href="/board"
+          className="hidden sm:inline-flex items-center gap-1.5 text-ink-muted font-medium hover:text-ink"
+        >
+          <Icon name="layers" className="h-3.5 w-3.5" />
+          Common Board
+        </Link>
+        <Link
           href="/demo"
           className="hidden sm:inline-flex items-center gap-1.5 text-primary font-medium hover:text-primary-dark"
         >

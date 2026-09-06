@@ -16,6 +16,7 @@ export function Footer() {
           <Link href="/pilgrim" className="hover:text-ink">Pilgrim</Link>
           <Link href="/volunteer" className="hover:text-ink">Volunteer</Link>
           <Link href="/management" className="hover:text-ink">Management</Link>
+          <Link href="/board" className="hover:text-ink">Common Board</Link>
           <Link href="/enroll" className="hover:text-ink">Volunteer sign-up</Link>
           <Link href="/demo" className="hover:text-ink">Demo</Link>
         </div>

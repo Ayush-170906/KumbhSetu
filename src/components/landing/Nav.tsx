@@ -20,6 +20,7 @@ export function Nav() {
           <Link href="/pilgrim" className="hover:text-ink transition-colors">Pilgrim</Link>
           <Link href="/volunteer" className="hover:text-ink transition-colors">Volunteer</Link>
           <Link href="/management" className="hover:text-ink transition-colors">Management</Link>
+          <Link href="/board" className="hover:text-ink transition-colors">Common Board</Link>
           <Link href="/enroll" className="hover:text-ink transition-colors">Volunteer sign-up</Link>
         </nav>
 
