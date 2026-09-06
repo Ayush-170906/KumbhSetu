@@ -34,6 +34,7 @@ const ACTION_KEYS = new Set([
   "confirmLostFoundMatch",
   "attachPhoto",
   "sendZoneMessage",
+  "submitFeedback",
   "createGroundReport",
   "corroborateGroundReport",
   "updateGroundReportStatus",

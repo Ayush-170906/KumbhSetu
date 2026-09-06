@@ -254,6 +254,26 @@ export interface ZoneMessage {
   createdAt: string;
 }
 
+export type FeedbackCategory =
+  | "facilities"
+  | "cleanliness"
+  | "safety"
+  | "crowd"
+  | "staff"
+  | "app"
+  | "other";
+
+/** A pilgrim's rating + note, shown on the Common Operations Board. */
+export interface PilgrimFeedback {
+  id: string;
+  name?: string;
+  zoneId?: string;
+  rating: number; // 1-5
+  category: FeedbackCategory;
+  message: string;
+  createdAt: string;
+}
+
 // ---------------------------------------------------------------------------
 // Setu AI Field Companion — ground truth & operational intelligence
 // ---------------------------------------------------------------------------

@@ -8,6 +8,7 @@ import type {
   AuditEvent,
   Advisory,
   FoundReport,
+  PilgrimFeedback,
 } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -312,6 +313,37 @@ export const AUDIT_SEED: AuditEvent[] = [
 export const INITIAL_ADVISORIES: Advisory[] = [];
 
 export const INITIAL_FOUND_REPORTS: FoundReport[] = [];
+
+// A few illustrative pilgrim ratings so the Common Board's feedback panel is
+// not empty on a fresh demo. Clearly synthetic.
+export const INITIAL_FEEDBACK: PilgrimFeedback[] = [
+  {
+    id: "fb-seed-1",
+    name: "Anonymous",
+    zoneId: "z01",
+    rating: 4,
+    category: "facilities",
+    message: "Water points near Ramkund were well stocked and clearly signed. Toilets a bit far.",
+    createdAt: new Date(Date.now() - 52 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "fb-seed-2",
+    name: "R. Iyer",
+    zoneId: "z04",
+    rating: 3,
+    category: "crowd",
+    message: "Very heavy crowd at the temple perimeter around noon. Marshals were helpful though.",
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "fb-seed-3",
+    zoneId: "z03",
+    rating: 5,
+    category: "staff",
+    message: "Volunteer at Kushavarta helped my elderly parents to the priority lane. Grateful.",
+    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+  },
+];
 
 export function findZone(zoneId: string): Zone | undefined {
   return ZONES.find((z) => z.id === zoneId);

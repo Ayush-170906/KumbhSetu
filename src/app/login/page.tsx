@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DEMO_ACCOUNTS, getSession, login, logout, type DemoAccount } from "@/lib/auth";
@@ -22,6 +22,14 @@ export default function LoginPage() {
     typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("next")
   );
   const [existing, setExisting] = useState<ReturnType<typeof getSession>>(() => getSession());
+  // Only reveal the "already signed in" banner after mount — getSession() reads
+  // sessionStorage, which the server can't see, so rendering it during SSR
+  // would cause a hydration mismatch.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   function go(acct: DemoAccount) {
     const s = login(acct.username, acct.password);
@@ -50,7 +58,7 @@ export default function LoginPage() {
           <SimTag label="DEMO SIGN-IN" />
         </div>
 
-        {existing && (
+        {mounted && existing && (
           <div className="mb-4 rounded-sm border border-status-green-border bg-status-green-bg px-3 py-2.5 text-xs text-status-green flex items-center justify-between gap-2">
             <span>
               This tab is already signed in as <strong>{existing.label}</strong>.

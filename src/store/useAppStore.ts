@@ -24,6 +24,8 @@ import type {
   FoundReport,
   LanguageCode,
   ZoneMessage,
+  PilgrimFeedback,
+  FeedbackCategory,
   GroundReport,
   GroundReportCategory,
   ReportSeverity,
@@ -42,6 +44,7 @@ import {
   AUDIT_SEED,
   INITIAL_ADVISORIES,
   INITIAL_FOUND_REPORTS,
+  INITIAL_FEEDBACK,
   findZone,
 } from "@/lib/seed";
 import {
@@ -184,6 +187,7 @@ export interface AppState {
   groundReports: GroundReport[];
   groundReportSeq: number;
   emergingSignals: EmergingSignal[];
+  pilgrimFeedback: PilgrimFeedback[];
 
   initSimulation: () => void;
   tick: () => void;
@@ -198,6 +202,13 @@ export interface AppState {
 
   attachPhoto: (incidentId: string, dataUrl: string, actor: string) => void;
   sendZoneMessage: (input: { zoneId: string; senderId: string; senderName: string; text: string }) => void;
+  submitFeedback: (input: {
+    name?: string;
+    zoneId?: string;
+    rating: number;
+    category: FeedbackCategory;
+    message: string;
+  }) => PilgrimFeedback;
 
   createGroundReport: (input: CreateGroundReportInput) => GroundReport;
   corroborateGroundReport: (reportId: string, by: string) => void;
@@ -290,6 +301,7 @@ const defaultData = {
   groundReports: [] as GroundReport[],
   groundReportSeq: 0,
   emergingSignals: [] as EmergingSignal[],
+  pilgrimFeedback: clone(INITIAL_FEEDBACK),
 };
 
 // Restore a prior session's incidents/tasks/etc. (if any) so a page reload
@@ -345,6 +357,34 @@ export const useAppStore = create<AppState>((set, get) => ({
       createdAt: nowIso(),
     };
     set((s) => ({ messages: [...s.messages, message].slice(-100) }));
+  },
+
+  submitFeedback: (input) => {
+    const fb: PilgrimFeedback = {
+      id: `fb-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      name: input.name?.trim() || undefined,
+      zoneId: input.zoneId || undefined,
+      rating: Math.max(1, Math.min(5, Math.round(input.rating))),
+      category: input.category,
+      message: input.message.trim(),
+      createdAt: nowIso(),
+    };
+    set((s) => ({
+      pilgrimFeedback: [fb, ...s.pilgrimFeedback].slice(0, 200),
+      auditLog: [
+        {
+          id: `ae-fb-${fb.id}`,
+          actor: fb.name ?? "Pilgrim",
+          action: "FEEDBACK_SUBMITTED",
+          entity: "feedback",
+          entityId: fb.id,
+          timestamp: nowIso(),
+          metadata: `${fb.rating}★ · ${fb.category}`,
+        },
+        ...s.auditLog,
+      ],
+    }));
+    return fb;
   },
 
   createGroundReport: (input) => {
@@ -1152,6 +1192,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       groundReports: [],
       groundReportSeq: 0,
       emergingSignals: [],
+      pilgrimFeedback: clone(INITIAL_FEEDBACK),
     }));
   },
 }));
