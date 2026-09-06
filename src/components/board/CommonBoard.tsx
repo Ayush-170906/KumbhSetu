@@ -18,6 +18,7 @@ import type {
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { SimTag } from "@/components/ui/SimTag";
+import { SnanBanner } from "@/components/shared/SnanBanner";
 
 const densityTone: Record<DensityLevel, "green" | "yellow" | "red"> = {
   low: "green",
@@ -234,6 +235,8 @@ export function CommonBoard() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-5 space-y-4">
+        <SnanBanner />
+
         {/* Snapshot */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           <Stat

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Zone, RiskSnapshot, Facility, Advisory, LanguageCode } from "@/lib/types";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { SnanBanner } from "@/components/shared/SnanBanner";
 import { StatusPill, bandLabel } from "@/components/ui/StatusPill";
 import { SimTag } from "@/components/ui/SimTag";
 import { OperationalMap } from "@/components/maps/OperationalMap";
@@ -82,6 +83,8 @@ export function HomeScreen({
           </select>
         </div>
       </div>
+
+      <SnanBanner className="mx-4 mt-3" />
 
       {activeAdvisories.length > 0 && (
         <div className="mx-4 mt-3 space-y-2">
