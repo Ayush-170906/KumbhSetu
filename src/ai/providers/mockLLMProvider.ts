@@ -19,6 +19,7 @@ import {
   type GroundReportDraft,
 } from "@/ai/schemas";
 import { classifyIntent, type SetuIntent } from "@/ai/intents";
+import { KB } from "@/ai/knowledge/kb";
 import type { ToolName } from "@/ai/tools/registry";
 import type { GroundReportCategory } from "@/lib/types";
 
@@ -87,6 +88,35 @@ function reply(volunteerLanguage: LanguageCode, line: Line, extra?: string): Par
 
 const EMERGENCY_RE =
   /\b(unconscious|not breathing|no pulse|collapsed|cardiac|heart attack|seizure|stroke|bleeding badly|choking|drowning|stampede|crush(ed|ing)?|not responding|fainted|fell and)\b/i;
+
+// "Give me the steps / what do I do IF …" — a training/procedure question, not a
+// live report. Routed to handleProcedure so Setu returns a numbered SOP even
+// when the sentence also contains emergency words ("what if someone faints").
+const PROCEDURE_RE = new RegExp(
+  [
+    /what (should|do|would|can) i do (if|when|for|about|next|now|here)/,
+    /what (do|should) i do\s*[?.!]*$/, // trailing "…, what do I do?"
+    /what happens if|what if (someone|somebody|a |an |there)/,
+    /how (do|should|can|would) i (handle|deal with|respond to|react to|manage|help|assist|support|guide|proceed|escalate|report)/,
+    /how to (handle|deal with|respond|react|manage|help|assist|support|guide|proceed|escalate|report)/,
+    /\bsteps?\b.{0,12}\b(for|to|when|if)\b|give me the steps|list the steps|step by step/,
+    /walk me through|talk me through|guide me through|take me through/,
+    /(procedure|protocol|process|sop|checklist)\b.{0,10}\b(for|to|when|is|when)\b/,
+    /\b(the |what.?s the |what is the )?(escalation|reporting|dispatch|handover|radio|evacuation|first[- ]aid) (procedure|protocol|process|steps?)/,
+    /what.?s the (right |correct )?(procedure|protocol|process|sop|first step|next step)/,
+  ].map((r) => r.source).join("|"),
+  "i"
+);
+
+/** True when the message reads as something happening NOW in front of the
+ *  volunteer (not a "what if" question) — then the emergency flow wins. */
+function looksLive(text: string): boolean {
+  return (
+    EMERGENCY_RE.test(text) &&
+    /\b(here|right now|in front of me|next to me|right here|at (the )?(gate|ghat|camp|block|steps|bridge)|near me)\b/i.test(text) &&
+    !/\bwhat (if|should i do if|do i do if|happens if)\b/i.test(text)
+  );
+}
 
 const OTHER_LANG_RE: [RegExp, LanguageCode][] = [
   [/\btamil\b/i, "ta"],
@@ -197,6 +227,20 @@ export class MockLLMProvider implements AIProvider {
         /\breport (a|an|the)\b/i.test(lower) ||
         /\bmy tasks?\b|\bmark (arrived|resolved|done)\b/i.test(lower);
       if (!isSetuCommand) intent = "translation";
+    }
+
+    // "What do I do if… / give me the steps for…" — a procedure question. Answer
+    // with the SOP as a numbered list, even if it mentions emergency words.
+    // (An actual live report — "someone HAS collapsed at Gate 4" — has no "if"
+    // and still routes to handleEmergency below.)
+    if (
+      PROCEDURE_RE.test(text) &&
+      !looksLive(text) &&
+      !req.memory.pendingReportCategory &&
+      !req.memory.translationPair &&
+      !req.memory.awaitingTranslationLanguage
+    ) {
+      return this.handleProcedure(req, text, lang);
     }
 
     const urgency: Urgency = EMERGENCY_RE.test(text) || intent === "emergency" ? "emergency" : intent === "medical" || intent === "crowd" || intent === "safety" ? "elevated" : "routine";
@@ -575,6 +619,66 @@ export class MockLLMProvider implements AIProvider {
       ...this.base(intent, "routine"),
       reply: { en: hit.body, ...(lang !== "en" ? { [lang]: hit.body } : {}) },
       provenance: `Source: ${hit.source}`,
+    };
+  }
+
+  /** "What do I do if… / give me the steps for…" — return the matching SOP as a
+   *  numbered list (§23). Topic is matched directly so a live demo is reliable;
+   *  the retrieved KB hit is the fallback. Always ends with the nudge that turns
+   *  a training question into a real action if it's happening now. */
+  private handleProcedure(req: SetuTurnRequest, text: string, lang: LanguageCode): SetuTurn {
+    const TOPIC_KB: [RegExp, string][] = [
+      [/\b(not breathing|no pulse|cpr|choking|seizure|convuls\w*|bleeding badly|cardiac|chest pain|heart attack|unconscious|unresponsive|not responding|collaps\w*|passed out)\b/i, "kb-medical-escalation"],
+      [/\b(faint\w*|dizzy|light[- ]?headed|heat ?stroke|heat exhaustion|dehydrat\w*|overheat\w*|sun ?stroke)\b/i, "kb-medical-heat"],
+      [/\b(child|kid|boy|girl|elder|parent)\b[^.?!]*\b(lost|missing|separated|gone|wander\w*)\b|\b(lost|missing|separated|found)\b[^.?!]*\b(child|kid|boy|girl|person|elder|parent|family|man|woman)\b|\bmissing[- ]person\b/i, "kb-lost-child"],
+      [/\b(crowd|crush\w*|stampede|surge|pressure|bottleneck|congestion|too many people|pushing)\b/i, "kb-crowd-pressure"],
+      [/\b(wheelchair|elderly|divyang|disabled|mobility|can.?t walk|old (man|woman|person)|blind|deaf|ramp)\b/i, "kb-accessibility"],
+      [/\b(escalat\w*|radio protocol|report an incident|not resolving|control room|hand ?over)\b/i, "kb-radio-protocol"],
+      [/\b(water|tanker|shortage|thirsty|piau|piyau)\b/i, "kb-water-points"],
+      [/\b(toilet|sanitation|overflow|drain|sewage|garbage|waste|latrine)\b/i, "kb-sanitation"],
+      [/\b(ground truth|field report|report an issue|report a (problem|issue)|evidence|corroborat\w*|verif\w*|good report)\b/i, "kb-ground-report-quality"],
+    ];
+
+    const id = TOPIC_KB.find(([re]) => re.test(text))?.[1];
+    const entry =
+      (id ? KB.find((e) => e.id === id) : undefined) ??
+      KB.find((e) => e.id === req.context.knowledge[0]?.id);
+
+    if (!entry) {
+      return {
+        ...this.base("information", "routine"),
+        reply: reply(lang, LINES.noVerified),
+        followUp: "Tell me the situation in a few words and I'll give you the steps.",
+      };
+    }
+
+    const KB_INTENT: Record<string, SetuIntent> = {
+      "kb-medical-escalation": "medical",
+      "kb-medical-heat": "medical",
+      "kb-lost-child": "lost_person",
+      "kb-crowd-pressure": "crowd",
+      "kb-accessibility": "accessibility",
+      "kb-radio-protocol": "volunteer_task",
+      "kb-water-points": "water",
+      "kb-sanitation": "toilet",
+      "kb-ground-report-quality": "ground_report",
+    };
+    const outIntent: SetuIntent = KB_INTENT[entry.id] ?? "information";
+
+    const nudge =
+      entry.id === "kb-medical-escalation" || entry.id === "kb-medical-heat" || entry.id === "kb-crowd-pressure"
+        ? 'If this is happening now, tell me where you are and say "raise an incident".'
+        : 'If you want me to act on this now, just say so.';
+
+    const stepBlock = entry.steps?.length
+      ? entry.steps.map((s, i) => `${i + 1}. ${s}`).join("\n")
+      : entry.body;
+    const full = `${entry.title}\n\n${stepBlock}\n\n${nudge}`;
+
+    return {
+      ...this.base(outIntent, "routine"),
+      reply: { en: full, ...(lang !== "en" ? { [lang]: full } : {}) },
+      provenance: `Source: ${entry.source}`,
     };
   }
 

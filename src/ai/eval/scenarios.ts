@@ -46,6 +46,31 @@ export const SCENARIOS: Scenario[] = [
   { id: "int-report", group: "intent", message: "report that the water tanker hasn't arrived", expectIntent: "ground_report" },
   { id: "int-crowd", group: "intent", message: "there is heavy crowding near Gate 4", expectIntent: "crowd" },
 
+  // --- procedure / "give me the steps" (answers with a numbered SOP) ---
+  {
+    id: "proc-lost-child",
+    group: "intent",
+    message: "what should I do if a child is lost",
+    expectIntent: "lost_person",
+    expectNoTool: true,
+    replyMustContain: "1.",
+  },
+  {
+    id: "proc-faint",
+    group: "intent",
+    message: "give me the steps for someone who has fainted",
+    expectIntent: "medical",
+    expectNoTool: true,
+    replyMustContain: "1.",
+  },
+  {
+    id: "proc-escalate",
+    group: "intent",
+    message: "what is the escalation procedure",
+    expectNoTool: true,
+    replyMustContain: "1.",
+  },
+
   // --- tool selection (no execution) ---
   { id: "tool-facility", group: "tool_selection", message: "find me the nearest medical camp", expectTool: "find_nearest_facility", expectConfirm: false },
   { id: "tool-zone", group: "tool_selection", message: "give me the current situation in this zone", expectTool: "get_zone_status" },
