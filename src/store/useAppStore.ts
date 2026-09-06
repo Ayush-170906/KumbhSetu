@@ -26,6 +26,8 @@ import type {
   ZoneMessage,
   PilgrimFeedback,
   FeedbackCategory,
+  FamilyGroup,
+  FamilyMember,
   GroundReport,
   GroundReportCategory,
   ReportSeverity,
@@ -188,6 +190,7 @@ export interface AppState {
   groundReportSeq: number;
   emergingSignals: EmergingSignal[];
   pilgrimFeedback: PilgrimFeedback[];
+  familyGroups: FamilyGroup[];
 
   initSimulation: () => void;
   tick: () => void;
@@ -209,6 +212,10 @@ export interface AppState {
     category: FeedbackCategory;
     message: string;
   }) => PilgrimFeedback;
+  createFamilyGroup: (name: string) => FamilyGroup;
+  addFamilyMember: (groupId: string, member: Omit<FamilyMember, "id">) => void;
+  removeFamilyMember: (groupId: string, memberId: string) => void;
+  setFamilyMeetingPoint: (groupId: string, point: { zoneId: string; label: string }) => void;
 
   createGroundReport: (input: CreateGroundReportInput) => GroundReport;
   corroborateGroundReport: (reportId: string, by: string) => void;
@@ -302,6 +309,7 @@ const defaultData = {
   groundReportSeq: 0,
   emergingSignals: [] as EmergingSignal[],
   pilgrimFeedback: clone(INITIAL_FEEDBACK),
+  familyGroups: [] as FamilyGroup[],
 };
 
 // Restore a prior session's incidents/tasks/etc. (if any) so a page reload
@@ -385,6 +393,55 @@ export const useAppStore = create<AppState>((set, get) => ({
       ],
     }));
     return fb;
+  },
+
+  createFamilyGroup: (name) => {
+    const group: FamilyGroup = {
+      id: `KS-${Math.floor(1000 + Math.random() * 9000)}`,
+      name: name.trim() || "My group",
+      createdAt: nowIso(),
+      members: [],
+    };
+    set((s) => ({ familyGroups: [group, ...s.familyGroups].slice(0, 50) }));
+    return group;
+  },
+
+  addFamilyMember: (groupId, member) => {
+    set((s) => ({
+      familyGroups: s.familyGroups.map((g) =>
+        g.id === groupId
+          ? {
+              ...g,
+              members: [
+                ...g.members,
+                {
+                  id: `fm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                  name: member.name.trim() || "Member",
+                  phone: member.phone?.trim() || undefined,
+                  wristband: member.wristband?.trim() || undefined,
+                  note: member.note?.trim() || undefined,
+                },
+              ],
+            }
+          : g
+      ),
+    }));
+  },
+
+  removeFamilyMember: (groupId, memberId) => {
+    set((s) => ({
+      familyGroups: s.familyGroups.map((g) =>
+        g.id === groupId ? { ...g, members: g.members.filter((m) => m.id !== memberId) } : g
+      ),
+    }));
+  },
+
+  setFamilyMeetingPoint: (groupId, point) => {
+    set((s) => ({
+      familyGroups: s.familyGroups.map((g) =>
+        g.id === groupId ? { ...g, meetingPoint: point } : g
+      ),
+    }));
   },
 
   createGroundReport: (input) => {
@@ -1193,6 +1250,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       groundReportSeq: 0,
       emergingSignals: [],
       pilgrimFeedback: clone(INITIAL_FEEDBACK),
+      familyGroups: [],
     }));
   },
 }));

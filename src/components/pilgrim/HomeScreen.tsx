@@ -17,6 +17,7 @@ const actions: { screen: PilgrimScreen; key: Parameters<typeof t>[0]; icon: Icon
   { screen: "facilities", key: "findFacility", icon: "map-pin" },
   { screen: "plan", key: "planKumbh", icon: "route" },
   { screen: "lost-found", key: "lostFound", icon: "lost" },
+  { screen: "family", key: "familyGroup", icon: "pilgrim" },
   { screen: "report-issue", key: "reportIssue", icon: "qr" },
   { screen: "assistant", key: "askAssistant", icon: "bell" },
 ];

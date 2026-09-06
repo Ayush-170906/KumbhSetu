@@ -254,6 +254,25 @@ export interface ZoneMessage {
   createdAt: string;
 }
 
+export interface FamilyMember {
+  id: string;
+  name: string;
+  phone?: string;
+  /** wristband / tag number written on a child or elder */
+  wristband?: string;
+  note?: string;
+}
+
+/** A pilgrim's travelling group, with a shareable code and a meeting point.
+ * Lightweight, device-local in practice — helps reunite a separated group. */
+export interface FamilyGroup {
+  id: string; // short human code, e.g. "KS-4821"
+  name: string;
+  createdAt: string;
+  meetingPoint?: { zoneId: string; label: string };
+  members: FamilyMember[];
+}
+
 export type FeedbackCategory =
   | "facilities"
   | "cleanliness"
