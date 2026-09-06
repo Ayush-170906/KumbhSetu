@@ -82,7 +82,8 @@ export function SecurityView() {
         </h1>
 
         <p className="text-gray-500 mt-2">
-          Real-time CCTV monitoring and security alerts
+          Concept view for CCTV monitoring and security alerts &mdash; simulated data,
+          no live camera network connected.
         </p>
       </div>
 
@@ -90,10 +91,10 @@ export function SecurityView() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
 
         <div className="border rounded-lg p-4 bg-white">
-          <p className="text-sm text-gray-500">Active Cameras</p>
+          <p className="text-sm text-gray-500">Cameras (mock)</p>
           <p className="text-3xl font-bold">24</p>
-          <p className="text-xs text-green-600 mt-2">
-            ● All systems online
+          <p className="text-xs text-gray-500 mt-2">
+            ● Simulated
           </p>
         </div>
 
@@ -128,16 +129,17 @@ export function SecurityView() {
 
         <div>
           <h2 className="text-xl font-bold">
-            🎥 Live CCTV Feeds
+            CCTV Intelligence &mdash; concept view
           </h2>
 
           <p className="text-xs text-gray-500 mt-1">
-            Security monitoring with detection overlays
+            Mock feeds with illustrative detection overlays. Not connected to any real
+            camera network &mdash; shows how operator alerts would surface.
           </p>
         </div>
 
-        <div className="text-sm font-bold text-green-600">
-          ● SYSTEM ONLINE
+        <div className="text-sm font-bold text-gray-500">
+          ● SIMULATION
         </div>
 
       </div>
@@ -165,9 +167,9 @@ export function SecurityView() {
               {/* DARK CCTV EFFECT */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
 
-              {/* LIVE */}
-              <div className="absolute top-3 left-3 bg-red-600 text-white text-xs px-3 py-1 rounded">
-                🔴 LIVE
+              {/* SIM badge */}
+              <div className="absolute top-3 left-3 bg-gray-800/80 text-white text-xs px-3 py-1 rounded">
+                SIM
               </div>
 
               {/* CAMERA NAME */}

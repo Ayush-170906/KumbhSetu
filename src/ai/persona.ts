@@ -93,9 +93,10 @@ export const PERSONAS: Record<SetuPersona, PersonaSpec> = {
     subtitle: "Control-room copilot — one question, the whole ground",
     emptyHint: "Ask for the overview, a zone, the signals, or draft an advisory.",
     chips: [
-      "Give me the operational overview",
-      "Which zones are at risk?",
+      "Brief me on current operations",
+      "Why is Ghat 4 at risk?",
       "Show me the emerging signals",
+      "Draft a shift handover for Ghat 4",
       "Draft an advisory for Ghat 4",
       "How many volunteers are available?",
     ],
