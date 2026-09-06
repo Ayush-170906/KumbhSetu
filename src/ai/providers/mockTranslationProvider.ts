@@ -192,6 +192,78 @@ const PHRASEBOOK: PhraseEntry[] = [
     },
   },
   {
+    keys: ["i am not feeling well", "i feel unwell", "i am unwell", "i am not well", "i feel sick", "i am feeling ill"],
+    translations: {
+      en: "I am not feeling well.",
+      hi: "मेरी तबीयत ठीक नहीं है।",
+      mr: "माझी तब्येत ठीक नाही.",
+      ta: "எனக்கு உடல்நிலை சரியில்லை.",
+    },
+  },
+  {
+    keys: ["i feel dizzy", "i am feeling dizzy", "my head is spinning", "i feel faint", "i am dizzy"],
+    translations: {
+      en: "I feel dizzy.",
+      hi: "मुझे चक्कर आ रहे हैं।",
+      mr: "मला चक्कर येत आहे.",
+      ta: "எனக்கு தலைசுற்றுகிறது.",
+    },
+  },
+  {
+    keys: ["please follow the signs", "follow the signs", "follow the arrows", "go with the crowd flow"],
+    translations: {
+      en: "Please follow the signs.",
+      hi: "कृपया संकेतों का अनुसरण करें।",
+      mr: "कृपया चिन्हांचे अनुसरण करा.",
+      ta: "தயவுசெய்து அறிகுறிகளைப் பின்பற்றுங்கள்.",
+    },
+  },
+  {
+    keys: ["please keep to the left", "keep left", "stay to the left", "keep moving"],
+    translations: {
+      en: "Please keep to the left and keep moving.",
+      hi: "कृपया बाईं ओर चलते रहें।",
+      mr: "कृपया डावीकडे राहून चालत राहा.",
+      ta: "தயவுசெய்து இடதுபுறமாக நகர்ந்து கொண்டே இருங்கள்.",
+    },
+  },
+  {
+    keys: ["stay with your group", "do not leave your family", "keep your family together", "hold the child's hand"],
+    translations: {
+      en: "Stay with your group and hold children by the hand.",
+      hi: "अपने समूह के साथ रहें और बच्चों का हाथ पकड़ें।",
+      mr: "आपल्या गटासोबत राहा आणि मुलांचा हात धरा.",
+      ta: "உங்கள் குழுவுடன் இருங்கள், குழந்தைகளின் கையைப் பிடியுங்கள்.",
+    },
+  },
+  {
+    keys: ["the elderly lane is this way", "priority lane is this way", "senior citizen lane is this way", "divyang lane is this way"],
+    translations: {
+      en: "The priority lane for elderly and divyang pilgrims is this way.",
+      hi: "बुज़ुर्ग और दिव्यांग यात्रियों के लिए प्राथमिकता लेन इस ओर है।",
+      mr: "ज्येष्ठ आणि दिव्यांग यात्रेकरूंसाठी प्राधान्य मार्ग या दिशेला आहे.",
+      ta: "மூத்தோர் மற்றும் மாற்றுத்திறனாளி யாத்ரீகர்களுக்கான முன்னுரிமை பாதை இந்தப் பக்கம்.",
+    },
+  },
+  {
+    keys: ["leave your bags at the cloakroom", "use the cloakroom for luggage", "do not carry bags to the ghat"],
+    translations: {
+      en: "Please leave large bags at the cloakroom before the ghat.",
+      hi: "घाट से पहले बड़े बैग क्लोकरूम में रखें।",
+      mr: "घाटापूर्वी मोठ्या बॅगा क्लोकरूममध्ये ठेवा.",
+      ta: "படித்துறைக்கு முன் பெரிய பைகளை கிளோக்ரூமில் வையுங்கள்.",
+    },
+  },
+  {
+    keys: ["drink water regularly", "please stay hydrated", "keep drinking water", "rest in the shade"],
+    translations: {
+      en: "Please drink water often and rest in the shade.",
+      hi: "बार-बार पानी पिएँ और छाँव में आराम करें।",
+      mr: "वारंवार पाणी प्या आणि सावलीत विश्रांती घ्या.",
+      ta: "அடிக்கடி தண்ணீர் குடியுங்கள், நிழலில் ஓய்வெடுங்கள்.",
+    },
+  },
+  {
     keys: ["please show me the way", "which way to go", "how do i get there", "show me the route"],
     translations: {
       en: "Please show me the way.",
