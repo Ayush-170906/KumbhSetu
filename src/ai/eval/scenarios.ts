@@ -76,6 +76,25 @@ export const SCENARIOS: Scenario[] = [
     replyMustContain: "1.",
   },
 
+  // --- snan calendar (date + ghat cluster for the holy dip) ---
+  {
+    id: "snan-today",
+    group: "intent",
+    message: "where do we go for the holy dip today",
+    persona: "pilgrim",
+    expectIntent: "religious_information",
+    expectNoTool: true,
+    replyMustContain: "Ramkund",
+  },
+  {
+    id: "snan-next",
+    group: "intent",
+    message: "when is the next shahi snan",
+    expectIntent: "religious_information",
+    expectNoTool: true,
+    replyMustContain: "authority",
+  },
+
   // --- persona: pilgrim (answers + hands off, never files an incident) ---
   {
     id: "pil-emergency-handoff",

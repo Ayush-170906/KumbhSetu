@@ -20,6 +20,7 @@ import {
 } from "@/ai/schemas";
 import { classifyIntent, type SetuIntent } from "@/ai/intents";
 import { KB } from "@/ai/knowledge/kb";
+import { snanAnswer } from "@/lib/snanCalendar";
 import type { ToolName } from "@/ai/tools/registry";
 import type { GroundReportCategory } from "@/lib/types";
 
@@ -88,6 +89,10 @@ function reply(volunteerLanguage: LanguageCode, line: Line, extra?: string): Par
 
 const EMERGENCY_RE =
   /\b(unconscious|not breathing|no pulse|collapsed|cardiac|heart attack|seizure|stroke|bleeding badly|choking|drowning|stampede|crush(ed|ing)?|not responding|fainted|fell and)\b/i;
+
+// "holy dip today", "next shahi snan", "which ghat for the bath", "snan schedule"
+const SNAN_RE =
+  /\b(shahi snan|amrit snan|holy (dip|bath)|bathing day|snan (day|days|window|time|timing|schedule|today|tomorrow|calendar)|next snan|parva snan|when (is|are).{0,24}(snan|holy (dip|bath)|bathing)|where.{0,24}(holy (dip|bath)|snan)|which ghat.{0,18}(today|now|snan|dip|bath))\b/i;
 
 // "Give me the steps / what do I do IF …" — a training/procedure question, not a
 // live report. Routed to handleProcedure so Setu returns a numbered SOP even
@@ -241,6 +246,17 @@ export class MockLLMProvider implements AIProvider {
       !req.memory.awaitingTranslationLanguage
     ) {
       return this.handleProcedure(req, text, lang);
+    }
+
+    // "Where / when is the holy dip today?" — answer from the snan calendar with
+    // the date and the ghat cluster (Vaishnava→Ramkund vs Shaiva→Kushavarta).
+    if (SNAN_RE.test(text)) {
+      const ans = snanAnswer();
+      return {
+        ...this.base("religious_information", "routine"),
+        reply: { en: ans, ...(lang !== "en" ? { [lang]: ans } : {}) },
+        provenance: "Source: Kumbh Setu snan calendar (illustrative) · Mela authority confirms",
+      };
     }
 
     // Asking for a precise live figure Setu cannot have (headcount, exact number
