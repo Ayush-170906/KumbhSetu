@@ -64,7 +64,17 @@ function Bubble({
   if (m.role === "user") {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-sm px-3 py-2 text-sm bg-primary text-white leading-relaxed">{m.text}</div>
+        <div className="max-w-[85%] rounded-sm px-3 py-2 text-sm bg-primary text-white leading-relaxed">
+          {m.imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={m.imageUrl}
+              alt="Photo sent to Setu"
+              className="mb-1.5 max-h-40 w-full rounded-sm border border-white/30 object-cover"
+            />
+          )}
+          {m.text}
+        </div>
       </div>
     );
   }
@@ -91,7 +101,7 @@ function Bubble({
         <div className="flex items-center gap-1.5 mb-1">
           <Icon name={emergency ? "warning" : "pilgrim"} className="h-3.5 w-3.5 shrink-0" />
           <span className="text-[9.5px] font-semibold uppercase tracking-wide opacity-70">
-            Setu
+            Kumbh Setu AI
             {m.intent && m.intent !== "other" ? ` · ${INTENT_LABELS[m.intent]}` : ""}
           </span>
         </div>

@@ -90,11 +90,33 @@ export class MockVisionProvider implements VisionProvider {
       };
     }
 
+    if (hint && hint.trim().length > 3) {
+      return {
+        label: `Field observation: ${hint.trim()}`,
+        categoryHint: "other",
+        potentialImpact: "Needs an operator to review",
+        confidence: 0.55 + jitter,
+      };
+    }
+
+    // No spoken hint at all — a bare photo. A real vision model would classify
+    // the scene; here we pick a neutral category deterministically from the
+    // image bytes so the report flow still works, keep confidence low, and
+    // flag it clearly as unverified from the image alone (§19). We deliberately
+    // avoid guessing alarming categories (fire, medical) with no corroborating
+    // words — those need the volunteer to say so.
+    const NEUTRAL: { label: string; categoryHint: string; potentialImpact: string }[] = [
+      { label: "an infrastructure or signage issue", categoryHint: "infrastructure", potentialImpact: "Wayfinding / pedestrian flow — an operator should review" },
+      { label: "a sanitation or waste issue", categoryHint: "toilet", potentialImpact: "Hygiene — an operator should review" },
+      { label: "a crowd build-up", categoryHint: "crowd", potentialImpact: "Movement / crowd pressure — an operator should review" },
+      { label: "a general field observation", categoryHint: "other", potentialImpact: "Needs an operator to review" },
+    ];
+    const pick = NEUTRAL[h % NEUTRAL.length];
     return {
-      label: hint ? `Field observation: ${hint}` : "Unclassified field observation",
-      categoryHint: "other",
-      potentialImpact: "Needs an operator to review",
-      confidence: 0.45 + jitter,
+      label: `${pick.label} (unverified from the image — add a note to confirm)`,
+      categoryHint: pick.categoryHint,
+      potentialImpact: pick.potentialImpact,
+      confidence: 0.48 + jitter,
     };
   }
 }

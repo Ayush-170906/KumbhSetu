@@ -4,7 +4,7 @@ import { Icon } from "@/components/ui/Icon";
 import type { SetuStatus } from "@/ai/schemas";
 
 const STATE_COPY: Record<SetuStatus, { label: string; hint: string }> = {
-  idle: { label: "Tap to talk", hint: "Ask Setu anything about your work" },
+  idle: { label: "Tap to talk", hint: "Ask, translate, or send a photo — Kumbh Setu AI" },
   listening: { label: "Listening…", hint: "Tell me what you need" },
   thinking: { label: "Thinking…", hint: "Working out the best answer" },
   searching: { label: "Checking…", hint: "Looking at live facility & zone data" },

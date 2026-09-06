@@ -14,6 +14,7 @@ import { getProviders } from "@/ai/providers";
 import { SetuMemory } from "@/ai/memory";
 import {
   runTurn,
+  runPhotoTurn,
   confirmPending,
   type PendingConfirmation,
   type TurnResult,
@@ -27,6 +28,8 @@ export interface SetuMessage {
   role: "user" | "setu" | "pilgrim";
   text: string;
   at: string;
+  /** Data URL of a photo the volunteer sent with this message (§18). */
+  imageUrl?: string;
   provenance?: string;
   intent?: SetuIntent;
   urgency?: Urgency;
@@ -261,6 +264,34 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
 
   const sendText = useCallback((text: string) => void handleUserMessage(text), [handleUserMessage]);
 
+  /** Camera / gallery image sent into the conversation (§18). Setu runs it
+   *  through the vision provider and structures a ground-report draft. */
+  const sendPhoto = useCallback(
+    async (dataUrl: string, note = "") => {
+      setLastError(null);
+      photoRef.current = dataUrl;
+      push({ role: "user", text: note.trim() || "Sent a photo", imageUrl: dataUrl });
+      setStatus("thinking");
+      try {
+        const res = await runPhotoTurn({
+          dataUrl,
+          note,
+          history: history(),
+          volunteerLanguage,
+          offline: useAppStore.getState().systemStatus.connectivity !== "nominal",
+          memory: memoryRef.current,
+          buildToolContext,
+        });
+        applyResult(res);
+      } catch (err) {
+        setStatus("error");
+        setLastError(err instanceof Error ? err.message : "Couldn't read that image");
+        push({ role: "setu", text: "I couldn't process that photo. Try another, or describe what you see." });
+      }
+    },
+    [push, history, volunteerLanguage, buildToolContext, applyResult]
+  );
+
   const confirm = useCallback(async () => {
     if (!pending) return;
     setStatus("taking_action");
@@ -393,6 +424,7 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
     startListening,
     stopListening,
     sendText,
+    sendPhoto,
     confirm,
     cancel,
     relayFromPilgrim,

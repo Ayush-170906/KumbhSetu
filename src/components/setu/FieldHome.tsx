@@ -46,7 +46,7 @@ export function FieldHome() {
             <Icon name="map-pin" className="h-5 w-5" />
           </Link>
           <div className="flex-1">
-            <div className="text-sm font-semibold text-ink leading-tight">Kumbh Setu · Field Companion</div>
+            <div className="text-sm font-semibold text-ink leading-tight">Kumbh Setu AI</div>
             <div className="text-[11px] text-ink-soft leading-tight">
               {greeting()}, {volunteer.name.split(" ").slice(-1)[0]} · {zone?.shortName ?? volunteer.zoneId} · Volunteer
             </div>

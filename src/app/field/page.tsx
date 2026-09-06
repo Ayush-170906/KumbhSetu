@@ -2,9 +2,9 @@ import { ClientOnly } from "@/components/ui/ClientOnly";
 import { FieldHome } from "@/components/setu/FieldHome";
 
 export const metadata = {
-  title: "Setu · AI Field Companion — Kumbh Setu",
+  title: "Kumbh Setu AI — Field Companion",
   description:
-    "Voice-first AI companion for volunteers on the ground — ask, translate, report and act, grounded in live operational data.",
+    "Voice-first AI companion for volunteers on the ground — ask, translate, read photos, report and act, grounded in live operational data.",
 };
 
 export default function FieldPage() {

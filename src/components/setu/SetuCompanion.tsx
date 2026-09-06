@@ -142,8 +142,8 @@ export function SetuCompanion({
       {!conversationStarted ? (
         <div className="flex-1 overflow-y-auto scroll-thin flex flex-col items-center px-6 pt-8 pb-4 gap-6">
           <div className="text-center">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-soft">Setu</div>
-            <div className="text-xs text-ink-muted mt-0.5">AI Field Companion</div>
+            <div className="text-[12px] font-semibold uppercase tracking-[0.16em] text-ink">Kumbh Setu AI</div>
+            <div className="text-xs text-ink-muted mt-0.5">Voice-first field companion</div>
           </div>
           <SetuOrb status={status} emergency={emergency} onPress={toggleListen} size={variant === "full" ? 148 : 120} />
           {partial && (
@@ -199,9 +199,10 @@ export function SetuCompanion({
         placeholder={
           reportDraft && reportDraft.missing.length > 0
             ? `Answer: ${reportDraft.missing[0]}…`
-            : "Type instead of speaking…"
+            : "Type, or use the camera…"
         }
         onSend={setu.sendText}
+        onPhoto={setu.sendPhoto}
       />
     </div>
   );

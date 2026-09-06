@@ -310,6 +310,139 @@ export async function runTurn(input: TurnInput): Promise<TurnResult> {
   return composeToolTurn(turn, input, ctx, false);
 }
 
+// ---------------------------------------------------------------------------
+// Photo turn (§18) — the volunteer captures an image (optionally with a spoken
+// note). Setu runs it through the vision provider, structures a ground-report
+// draft (never verified from the image alone, §19), and hands it to the same
+// confirm-before-submit flow a spoken report uses.
+// ---------------------------------------------------------------------------
+
+export interface PhotoTurnInput {
+  dataUrl: string;
+  /** What the volunteer said/typed alongside the photo. May be empty. */
+  note: string;
+  history: ConversationTurn[];
+  volunteerLanguage: LanguageCode;
+  offline: boolean;
+  memory: SetuMemory;
+  buildToolContext: () => ToolContext;
+}
+
+const PHOTO_CATEGORIES: GroundReportCategory[] = [
+  "water", "food", "toilet", "medical", "crowd", "infrastructure", "safety", "lost_person", "accessibility", "other",
+];
+
+function countFromText(text: string): number | undefined {
+  const m =
+    text.match(/(?:about|around|approx(?:\.|imately)?|roughly|~|nearly|some)\s+(\d{1,5})/i) ||
+    text.match(/(\d{1,5})\s*(?:\+|or so)?\s*(?:people|persons?|pilgrims?|waiting|affected|stuck|stranded)/i);
+  if (m) return Number(m[1]);
+  if (/\bhundreds\b/i.test(text)) return 200;
+  if (/\bthousands\b/i.test(text)) return 1000;
+  return undefined;
+}
+
+export async function runPhotoTurn(input: PhotoTurnInput): Promise<TurnResult> {
+  const { vision } = getProviders();
+  const note = input.note.trim();
+  input.memory.observe(note);
+
+  const obs = await vision.describe(input.dataUrl, note || undefined);
+  const category: GroundReportCategory = PHOTO_CATEGORIES.includes(obs.categoryHint as GroundReportCategory)
+    ? (obs.categoryHint as GroundReportCategory)
+    : "other";
+
+  const fireLike = /\b(fire|smoke|burn|spark|electrical)\b/i.test(`${note} ${obs.label}`);
+  const people = countFromText(note);
+  const urgency: Urgency = fireLike ? "elevated" : "routine";
+  const severity: "low" | "moderate" | "high" =
+    fireLike || (people ?? 0) >= 100 || /\b(serious|urgent|danger|badly|large|many)\b/i.test(note)
+      ? "high"
+      : (people ?? 0) >= 30
+      ? "moderate"
+      : /\b(minor|small|slight)\b/i.test(note)
+      ? "low"
+      : "moderate";
+
+  const summary = `${obs.label}${note ? ` — “${note.slice(0, 140)}”` : ""}`;
+  const missing: string[] = [];
+  if (people === undefined && (category === "water" || category === "food" || category === "crowd" || category === "toilet")) {
+    missing.push("roughly how many people are affected");
+  }
+
+  const reportDraft: GroundReportDraft = {
+    category,
+    summary,
+    detail: note || undefined,
+    severity,
+    estimatedPeopleAffected: people,
+    missing,
+    aiConfidence: obs.confidence,
+  };
+  input.memory.setPendingReport(category);
+
+  const conf = (obs.confidence * 100) | 0;
+  const catLabel = category.replace("_", " ");
+  const leadEn =
+    `I can see ${obs.label.toLowerCase()}. Category: ${catLabel}. ` +
+    `Confidence ${conf}% — a photo alone isn't verified. ${obs.potentialImpact}.`;
+  const lead =
+    input.volunteerLanguage === "en"
+      ? leadEn
+      : `${obs.label} · ${catLabel} · ${conf}%. ${obs.potentialImpact}.`;
+
+  const provenance = `Vision: ${getProviders().vision.info.name} · structured by Setu from photo + note + GPS`;
+  const synthTurn: SetuTurn = {
+    intent: "ground_report",
+    urgency,
+    reply: { en: leadEn, ...(input.volunteerLanguage !== "en" ? { [input.volunteerLanguage]: lead } : {}) },
+    requiresConfirmation: missing.length === 0,
+    confirmationPrompt: missing.length === 0 ? "Submit this photo report to the control room?" : undefined,
+    reportDraft,
+    provenance,
+  };
+
+  if (missing.length > 0) {
+    return {
+      turn: synthTurn,
+      intent: "ground_report",
+      urgency,
+      endStatus: "speaking",
+      text: combine(lead, `I still need: ${missing.join(", ")}.`),
+      textEn: combine(leadEn, `Still needed: ${missing.join(", ")}.`),
+      provenance,
+      reportDraft,
+    };
+  }
+
+  return {
+    turn: synthTurn,
+    intent: "ground_report",
+    urgency,
+    endStatus: "waiting_for_confirmation",
+    text: combine(lead, "Submit this photo report to the control room?"),
+    textEn: combine(leadEn, "Submit this photo report to the control room?"),
+    provenance,
+    reportDraft,
+    pendingConfirmation: {
+      tool: {
+        name: "create_ground_report",
+        arguments: {
+          category,
+          summary,
+          detail: note || undefined,
+          severity,
+          estimatedPeopleAffected: people,
+          aiConfidence: obs.confidence,
+        },
+      },
+      prompt: "Submit this photo report to the control room?",
+      riskClass: "high_write",
+      lead,
+    },
+  };
+}
+
 /** Execute a tool that was deferred to a confirm card, after the user approves. */
 export async function confirmPending(
   pending: PendingConfirmation,
