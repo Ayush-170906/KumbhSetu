@@ -10,6 +10,11 @@ import { formatClockShort } from "@/lib/format";
 import { t } from "@/lib/i18n";
 import { LANGUAGE_LABELS } from "@/lib/i18n";
 import type { LanguageCode } from "@/lib/types";
+import {
+  buildEmergencyPacket,
+  EMERGENCY_SMS_SHORTCODE,
+  OFFLINE_SOP,
+} from "@/lib/emergencyPacket";
 
 const types: { type: IncidentType; label: string; icon: IconName; severity: "critical" | "moderate" }[] = [
   { type: "medical", label: "Medical Emergency", icon: "medical", severity: "critical" },
@@ -30,6 +35,10 @@ export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) 
   const [selected, setSelected] = useState<(typeof types)[number] | null>(null);
   const [incidentId, setIncidentId] = useState<string | null>(null);
   const [preferredLanguage, setPreferredLanguage] = useState<LanguageCode>(language);
+  const [packetCopied, setPacketCopied] = useState(false);
+
+  const offline = connectivity !== "nominal";
+  const packet = buildEmergencyPacket(zone.code, zone.id, 1);
 
   const incident = incidentId ? incidents.find((i) => i.id === incidentId) : undefined;
   const task = incident ? tasks.find((t) => t.incidentId === incident.id) : undefined;
@@ -82,9 +91,9 @@ export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) 
 
   if (step === "confirm" && selected) {
     return (
-      <div className="flex-1 flex flex-col p-4">
-        <div className="flex-1 flex flex-col items-center justify-center text-center px-2">
-          <div className="h-14 w-14 rounded-full bg-status-red-bg flex items-center justify-center mb-5">
+      <div className="flex-1 flex flex-col p-4 min-h-0">
+        <div className="flex-1 overflow-y-auto scroll-thin flex flex-col items-center text-center px-2">
+          <div className="h-14 w-14 rounded-full bg-status-red-bg flex items-center justify-center mb-5 mt-2 shrink-0">
             <Icon name={selected.icon} className="h-6 w-6 text-status-red" />
           </div>
           <h1 className="text-lg font-semibold text-ink">{t("confirmAssistanceTitle", language)}</h1>
@@ -92,14 +101,10 @@ export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) 
             Your location ({zone.shortName}) will be shared with the nearest available response volunteer and with
             the control room.
           </p>
-          {connectivity !== "nominal" && (
-            <p className="text-xs text-status-amber mt-3 max-w-xs">
-              Connectivity is degraded — this request will attempt an emergency fallback path and may take longer.
-            </p>
-          )}
+
           <div className="mt-4">
             <div className="text-[10px] uppercase tracking-wide text-ink-soft mb-1.5">Preferred language for your responder</div>
-            <div className="flex gap-1.5 justify-center">
+            <div className="flex gap-1.5 justify-center flex-wrap">
               {(Object.keys(LANGUAGE_LABELS) as LanguageCode[]).map((code) => (
                 <button
                   key={code}
@@ -113,8 +118,66 @@ export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) 
               ))}
             </div>
           </div>
+
+          {offline && (
+            <div className="mt-5 w-full text-left rounded-sm border border-status-amber-border bg-status-amber-bg/50 p-3">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-status-amber">
+                <Icon name="wifi-off" className="h-3.5 w-3.5" />
+                Connectivity degraded — offline fallback
+              </div>
+              <p className="text-[11px] text-ink-muted mt-1">
+                Send this emergency packet as an SMS. It carries your zone, location and time in one
+                short message the control room can act on.
+              </p>
+              <div className="mt-2 font-mono-num text-[11px] bg-surface border border-border rounded-sm px-2 py-1.5 break-all text-ink">
+                {packet}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <a
+                  href={`sms:${EMERGENCY_SMS_SHORTCODE}?body=${encodeURIComponent(packet)}`}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-sm bg-status-red text-white text-xs font-medium py-2 hover:bg-[#8f2c20] transition-colors"
+                >
+                  <Icon name="phone" className="h-3.5 w-3.5" />
+                  Send as SMS
+                </a>
+                <button
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(packet);
+                      setPacketCopied(true);
+                      setTimeout(() => setPacketCopied(false), 2000);
+                    } catch {}
+                  }}
+                  className="rounded-sm border border-border bg-surface text-xs text-ink-muted px-3 hover:text-ink"
+                >
+                  {packetCopied ? "Copied" : "Copy"}
+                </button>
+              </div>
+
+              <div className="mt-3 space-y-2">
+                <div className="text-[10px] uppercase tracking-wide text-ink-soft">
+                  While you wait — cached first response
+                </div>
+                {OFFLINE_SOP.map((sop) => (
+                  <details key={sop.id} className="rounded-sm border border-border bg-surface">
+                    <summary className="text-xs font-medium text-ink px-2.5 py-1.5 cursor-pointer">
+                      {sop.title}
+                    </summary>
+                    <ol className="px-3 pb-2 space-y-1">
+                      {sop.steps.map((s, i) => (
+                        <li key={i} className="text-[11px] text-ink-muted flex gap-1.5">
+                          <span className="text-primary font-semibold">{i + 1}.</span>
+                          {s}
+                        </li>
+                      ))}
+                    </ol>
+                  </details>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 pt-3 shrink-0">
           <Button className="w-full" size="lg" onClick={handleConfirm}>
             {t("confirmSend", language)}
           </Button>
@@ -180,8 +243,9 @@ export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) 
         )}
 
         <div className="text-[11px] text-ink-soft mt-3">
-          Reported {formatClockShort(incident.createdAt)} · This status updates automatically as the volunteer and
-          control room respond.
+          Reported {formatClockShort(incident.createdAt)}
+          {offline ? " · sent via SMS fallback — status may lag until connectivity returns" : ""} · This
+          status updates automatically as the volunteer and control room respond.
         </div>
 
         {task?.state === "resolved" && (
