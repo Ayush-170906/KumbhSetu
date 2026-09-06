@@ -8,7 +8,7 @@ import { HomeScreen } from "./HomeScreen";
 import { SOSFlow } from "./SOSFlow";
 import { FacilitiesScreen } from "./FacilitiesScreen";
 import { LostFoundScreen } from "./LostFoundScreen";
-import { AssistantScreen } from "./AssistantScreen";
+import { SetuCompanion } from "@/components/setu/SetuCompanion";
 import { ReportIssueScreen } from "./ReportIssueScreen";
 import { StubScreen } from "./StubScreen";
 import { Icon } from "@/components/ui/Icon";
@@ -82,7 +82,13 @@ export default function PilgrimApp() {
       {screen === "facilities" && <FacilitiesScreen facilities={store.facilities} zones={store.zones} />}
       {screen === "lost-found" && <LostFoundScreen zone={zone} />}
       {screen === "assistant" && (
-        <AssistantScreen zone={zone} snapshot={snapshot} facilities={store.facilities} onNavigate={setScreen} />
+        <SetuCompanion
+          persona="pilgrim"
+          zoneId={zone.id}
+          language={store.language}
+          variant="embedded"
+          onNavHint={(s) => setScreen(s as PilgrimScreen)}
+        />
       )}
       {screen === "route" && (
         <StubScreen

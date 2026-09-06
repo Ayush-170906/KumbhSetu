@@ -243,7 +243,28 @@ export class MockLLMProvider implements AIProvider {
       return this.handleProcedure(req, text, lang);
     }
 
+    // Asking for a precise live figure Setu cannot have (headcount, exact number
+    // right now). Do not answer from static knowledge — say so (§23).
+    if (
+      /\b(exact|precise|current|live|real[- ]time)\b[^.?!]*\b(count|number|figure|headcount|head count|tally|total|how many)\b/i.test(text) ||
+      /\bhow many people\b[^.?!]*\b(now|right now|currently|at (the )?(moment|ghat|gate))\b/i.test(text) ||
+      /\b(headcount|head count)\b[^.?!]*\b(now|right now|currently)\b/i.test(text)
+    ) {
+      return { ...this.base(intent, "routine"), reply: reply(lang, LINES.noVerified) };
+    }
+
     const urgency: Urgency = EMERGENCY_RE.test(text) || intent === "emergency" ? "emergency" : intent === "medical" || intent === "crowd" || intent === "safety" ? "elevated" : "routine";
+
+    // Persona-specific routing. Translation and knowledge/procedure answers are
+    // shared; what differs is what each role is allowed to *do*.
+    if (req.persona === "pilgrim" && intent !== "translation") {
+      const t = this.pilgrimTurn(req, intent, text, lang, urgency);
+      if (t) return t;
+    }
+    if (req.persona === "management" && intent !== "translation") {
+      const t = this.managementTurn(req, intent, text, lang, lower);
+      if (t) return t;
+    }
 
     switch (intent) {
       case "emergency":
@@ -286,6 +307,202 @@ export class MockLLMProvider implements AIProvider {
 
   private base(intent: SetuIntent, urgency: Urgency): Pick<SetuTurn, "intent" | "urgency" | "requiresConfirmation"> {
     return { intent, urgency, requiresConfirmation: false };
+  }
+
+  // ---- PILGRIM persona ------------------------------------------------
+  // Pilgrims get answers and gentle direction, and are handed off to the SOS /
+  // Report / Lost-&-Found screens for anything that changes operational state —
+  // they never file a control-room incident from the assistant.
+  private pilgrimTurn(
+    req: SetuTurnRequest,
+    intent: SetuIntent,
+    text: string,
+    lang: LanguageCode,
+    urgency: Urgency
+  ): SetuTurn | null {
+    if (intent === "emergency" || urgency === "emergency" || /\bhelp me\b|\bi need help\b/i.test(text)) {
+      return {
+        ...this.base("emergency", "emergency"),
+        reply: reply(
+          lang,
+          L(
+            "This sounds urgent. Use SOS — one tap sends your location and the problem to the nearest volunteer and the control room, and keeps trying if the signal is weak.",
+            "यह ज़रूरी लगता है। एसओएस दबाएँ — एक टैप में आपकी लोकेशन और समस्या नज़दीकी स्वयंसेवक और नियंत्रण कक्ष तक पहुँच जाती है।",
+            "हे तातडीचे वाटते. एसओएस दाबा — एका टॅपमध्ये तुमचे ठिकाण आणि समस्या जवळच्या स्वयंसेवक व नियंत्रण कक्षाला पोहोचते.",
+            "இது அவசரமாகத் தெரிகிறது. SOS ஐ அழுத்துங்கள் — ஒரே தட்டலில் உங்கள் இருப்பிடமும் பிரச்சினையும் அருகிலுள்ள தொண்டர் மற்றும் கட்டுப்பாட்டு அறைக்குச் செல்லும்."
+          )
+        ),
+        navHint: { screen: "sos-type", label: "Open SOS now" },
+        provenance: "Source: Kumbh Setu — getting help",
+      };
+    }
+
+    if (intent === "lost_person") {
+      const kb = req.context.knowledge.find((k) => k.id === "kb-lost-found-pilgrim" || k.id === "kb-children-safety");
+      return {
+        ...this.base("lost_person", "elevated"),
+        reply: {
+          en:
+            (kb?.body ??
+              "Go to the nearest Help Desk or volunteer and give a description and where you last saw them. The control room matches this against found-person reports and makes announcements.") ,
+          ...(lang !== "en" ? { [lang]: kb?.body ?? "" } : {}),
+        },
+        navHint: { screen: "lost-found", label: "Open Lost & Found" },
+        provenance: kb ? `Source: ${kb.source}` : "Source: Kumbh Setu — lost & found",
+      };
+    }
+
+    if (intent === "ground_report" || intent === "complaint") {
+      return {
+        ...this.base("ground_report", "routine"),
+        reply: reply(
+          lang,
+          L(
+            "You can report this with a photo — it goes to the control room as a case, no need to find a desk.",
+            "आप इसे फ़ोटो के साथ दर्ज कर सकते हैं — यह नियंत्रण कक्ष तक केस के रूप में पहुँचता है।",
+            "तुम्ही हे फोटोसह नोंदवू शकता — ते नियंत्रण कक्षाला केस म्हणून पोहोचते.",
+            "இதை புகைப்படத்துடன் பதிவு செய்யலாம் — இது கட்டுப்பாட்டு அறைக்கு வழக்காகச் செல்லும்."
+          )
+        ),
+        navHint: { screen: "report-issue", label: "Report an issue" },
+      };
+    }
+
+    // Facilities: answer with the nearest one AND offer the full list.
+    const ftype = FACILITY_INTENT_TYPE[intent] ?? sniffFacilityType(text);
+    if (ftype) {
+      return {
+        ...this.base(intent, "routine"),
+        reply: reply(lang, LINES.onIt),
+        tool: { name: "find_nearest_facility", arguments: { type: ftype } },
+        navHint: { screen: "facilities", label: "See all facilities" },
+        provenance: "Source: Live facility database",
+      };
+    }
+
+    if (intent === "crowd" || intent === "zone_intelligence") {
+      return {
+        ...this.base("crowd", "routine"),
+        reply: reply(lang, LINES.onIt),
+        tool: { name: "get_crowd_status", arguments: {} },
+        provenance: "Source: live crowd reading · synthetic demo data",
+      };
+    }
+
+    // Anything else (religious info, transport facts, general questions,
+    // translation) is fine on the shared path.
+    return null;
+  }
+
+  // ---- MANAGEMENT persona ------------------------------------------------
+  private managementTurn(
+    req: SetuTurnRequest,
+    intent: SetuIntent,
+    text: string,
+    lang: LanguageCode,
+    lower: string
+  ): SetuTurn | null {
+    const readTurn = (name: ToolName, args: Record<string, unknown>, prov: string): SetuTurn => ({
+      ...this.base(intent === "other" ? "zone_intelligence" : intent, "routine"),
+      reply: reply(lang, LINES.hereYouGo),
+      tool: { name, arguments: args },
+      provenance: `Source: ${prov}`,
+    });
+
+    if (/\b(signal|signals|emerging|corroborat\w*)\b/i.test(lower) && !/\bpromote|act on\b/i.test(lower)) {
+      return readTurn("get_emerging_signals", {}, "Kumbh Pulse · aggregated field reports");
+    }
+
+    if (/\bpromote\b|\bact on (the|this|that) signal\b|\bturn (the|this|that) signal into\b|\bdispatch (on|for) (the|this) signal\b/i.test(lower)) {
+      const cat = detectCategory(text);
+      return {
+        ...this.base("zone_intelligence", "elevated"),
+        reply: reply(lang, LINES.onIt),
+        tool: { name: "promote_signal_to_incident", arguments: cat !== "other" ? { category: cat } : {} },
+        requiresConfirmation: true,
+        confirmationPrompt: "Promote the emerging signal to a dispatchable incident and page the nearest fit volunteer?",
+        provenance: "Kumbh Pulse → dispatch",
+      };
+    }
+
+    if (/\b(advisory|advise the|notice to|announce|broadcast|tell the pilgrims|put out a|issue a)\b/i.test(lower)) {
+      const parsed = this.parseAdvisory(text, req.context);
+      if (!parsed.message) {
+        return {
+          ...this.base("information", "routine"),
+          reply: reply(lang, L("I can draft an advisory.", "मैं एक सूचना तैयार कर सकता हूँ।", "मी एक सूचना तयार करू शकतो.", "நான் ஒரு அறிவிப்பை உருவாக்க முடியும்.")),
+          followUp: "Tell me what it should say, and which zone (or 'all zones').",
+        };
+      }
+      return {
+        ...this.base("information", "elevated"),
+        reply: reply(lang, L("Here's the advisory ready to publish:", "यह प्रकाशित करने के लिए तैयार सूचना है:", "प्रकाशित करण्यासाठी तयार सूचना:", "வெளியிட தயாராக உள்ள அறிவிப்பு:"), `“${parsed.message}” → ${parsed.scopeLabel}`),
+        tool: {
+          name: "publish_advisory",
+          arguments: { scope: parsed.scope, severity: parsed.severity, message: parsed.message },
+        },
+        requiresConfirmation: true,
+        confirmationPrompt: `Publish this ${parsed.severity} to ${parsed.scopeLabel}? It goes live on every pilgrim phone in scope.`,
+        provenance: "Kumbh Setu operations guide — advisories",
+      };
+    }
+
+    if (/\bvolunteers?\b/i.test(lower) && /\b(available|free|spare|how many|roster|on task|deployed)\b/i.test(lower)) {
+      return readTurn("get_available_volunteers", {}, "Volunteer roster");
+    }
+
+    if (
+      intent === "zone_intelligence" ||
+      /\b(overview|sitrep|situation report|status report|whole (picture|ground)|brief me|everything|across the (site|ground)|all zones|which zones|zones at risk|at risk|hotspot|red zones|how (are|is) (things|it) (looking|going))\b/i.test(lower)
+    ) {
+      // If they named a specific zone, let the shared single-zone tool handle it.
+      const namedZone = req.context.operational && /\b(ghat|kushavarta|transit|pontoon|tapovan|ramkund)\b/i.test(lower);
+      if (!namedZone) {
+        return readTurn("get_operational_overview", {}, "Live operational state · synthetic demo data");
+      }
+    }
+
+    return null;
+  }
+
+  private parseAdvisory(
+    text: string,
+    context: SetuTurnRequest["context"]
+  ): { message: string; scope: string; scopeLabel: string; severity: "info" | "advisory" | "warning" } {
+    const severity: "info" | "advisory" | "warning" = /\b(police warning|warning|urgent|danger)\b/i.test(text)
+      ? "warning"
+      : /\b(notice|fyi|info|information)\b/i.test(text)
+      ? "info"
+      : "advisory";
+
+    // scope: an explicit "all/everyone/event-wide", or a named zone.
+    let scope = "all";
+    let scopeLabel = "all zones";
+    if (!/\b(all zones|everyone|event[- ]wide|whole (event|site)|all pilgrims)\b/i.test(text)) {
+      const zoneWord = text.match(/\b(ghat\s*\d|kushavarta|transit corridor|pontoon bridge|tapovan|ramkund|ghat \d)\b/i);
+      if (zoneWord) {
+        scope = zoneWord[0].replace(/\s+/g, " ").trim();
+        scopeLabel = scope;
+      }
+    }
+
+    // message: prefer a quoted string, then text after "say/saying/that says/:".
+    const quoted = text.match(/["'“”‘’](.+?)["'“”‘’]/);
+    let message = quoted?.[1]?.trim() ?? "";
+    if (!message) {
+      const after = text.match(/\b(?:saying|that says|to say|which says|message|:)\s*[:\-—]?\s*(.+)$/i);
+      if (after) message = after[1].trim().replace(/^["'“”‘’]|["'“”‘’]$/g, "");
+    }
+    // strip a leading "publish/draft an advisory for X" wrapper if the whole
+    // thing was one sentence with the instruction inline
+    if (!message && !/\bfor (ghat|all|zone|kushavarta|transit|pontoon|tapovan|ramkund)\b/i.test(text)) {
+      const stripped = text
+        .replace(/^.*?\b(advisory|notice|announce(ment)?|broadcast)\b\s*(for [a-z0-9 ]+?)?\s*[:\-—]?\s*/i, "")
+        .trim();
+      if (stripped.split(/\s+/).length >= 3) message = stripped;
+    }
+    void context;
+    return { message, scope, scopeLabel, severity };
   }
 
   private handleEmergency(req: SetuTurnRequest, text: string, lang: LanguageCode): SetuTurn {

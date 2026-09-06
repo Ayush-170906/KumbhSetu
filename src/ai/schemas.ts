@@ -8,6 +8,7 @@
 import type { LanguageCode, GroundReportCategory, ReportSeverity } from "@/lib/types";
 import type { SetuIntent } from "@/ai/intents";
 import type { ToolName } from "@/ai/tools/registry";
+import type { SetuPersona } from "@/ai/persona";
 
 export type Urgency = "routine" | "elevated" | "emergency";
 
@@ -34,9 +35,11 @@ export interface RetrievedContext {
 export interface SetuTurnRequest {
   /** The user's message this turn (already transcribed if it came from voice). */
   message: string;
+  /** Who is asking — pilgrim, volunteer or control room. Shapes tools + framing. */
+  persona: SetuPersona;
   /** Prior turns, oldest first. */
   history: ConversationTurn[];
-  /** Language the volunteer is interacting in. */
+  /** Language the user is interacting in. */
   volunteerLanguage: LanguageCode;
   /** Grounding: retrieved KB + live operational summary. */
   context: RetrievedContext;
@@ -102,6 +105,9 @@ export interface SetuTurn {
   exitTranslationMode?: boolean;
   /** Freeform provenance note shown under the reply ("Source: …"). */
   provenance?: string;
+  /** Pilgrim companion only: a screen the reply suggests opening (e.g. "sos-type",
+   *  "facilities", "lost-found", "report-issue"). Rendered as a button. */
+  navHint?: { screen: string; label: string };
 }
 
 const URGENCIES: Urgency[] = ["routine", "elevated", "emergency"];

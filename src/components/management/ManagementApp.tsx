@@ -15,6 +15,7 @@ import { LostFoundView } from "./LostFoundView";
 import { Drawer } from "@/components/ui/Drawer";
 import { ZoneIntelligence } from "@/components/maps/ZoneIntelligence";
 import { IncidentDetail } from "@/components/incidents/IncidentDetail";
+import { SetuCompanion } from "@/components/setu/SetuCompanion";
 
 export default function ManagementApp() {
   const store = useAppStore();
@@ -63,6 +64,14 @@ export default function ManagementApp() {
               setSelectedZoneId(null);
             }}
           />
+        )}
+
+        {view === "copilot" && (
+          <div className="flex-1 min-h-0 flex justify-center bg-ivory">
+            <div className="w-full max-w-2xl flex flex-col min-h-0 border-x border-border">
+              <SetuCompanion persona="management" variant="full" />
+            </div>
+          </div>
         )}
 
         {view === "pulse" && (

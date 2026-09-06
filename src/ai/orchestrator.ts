@@ -22,6 +22,7 @@ import {
 } from "@/ai/schemas";
 import { classifyIntent, type SetuIntent } from "@/ai/intents";
 import { retrieve } from "@/ai/knowledge/kb";
+import { PERSONAS, toolAllowedForPersona, type SetuPersona } from "@/ai/persona";
 import { SetuMemory } from "@/ai/memory";
 import { getProviders } from "@/ai/providers";
 import {
@@ -35,6 +36,7 @@ import {
 
 export interface TurnInput {
   message: string;
+  persona: SetuPersona;
   history: ConversationTurn[];
   volunteerLanguage: LanguageCode;
   offline: boolean;
@@ -76,6 +78,8 @@ export interface TurnResult {
   translationRelay?: TranslationRelay;
   enteredTranslationMode?: { other: LanguageCode };
   exitedTranslationMode?: boolean;
+  /** Pilgrim companion: a screen the reply offers to open. */
+  navHint?: { screen: string; label: string };
 }
 
 function pickLang(reply: Partial<Record<LanguageCode, string>>, lang: LanguageCode): string {
@@ -92,7 +96,27 @@ function combine(lead: string, detail: string): string {
 }
 
 /** A compact, already-formatted snapshot of live operational state (§21). */
-function operationalSummary(ctx: ToolContext): string {
+function operationalSummary(ctx: ToolContext, persona: SetuPersona = "volunteer"): string {
+  // Control room sees the whole ground; pilgrim/volunteer see their zone.
+  if (persona === "management") {
+    const s = ctx.store;
+    const open = s.incidents.filter((i) => !["resolved", "cancelled"].includes(i.status));
+    const crit = open.filter((i) => i.severity === "critical").length;
+    const atRisk = [...s.zones].filter((z) => z.riskBand !== "green").sort((a, b) => b.riskScore - a.riskScore);
+    const avail = s.volunteers.filter((v) => v.availability === "available").length;
+    const signals = s.emergingSignals ?? [];
+    return [
+      `${open.length} open incident(s)${crit ? ` (${crit} critical)` : ""}.`,
+      atRisk.length
+        ? `Zones at risk: ${atRisk.map((z) => `${z.shortName} ${z.riskBand} ${z.riskScore}/100`).join(", ")}.`
+        : "All zones green.",
+      `${avail} volunteer(s) available across the site.`,
+      signals.length
+        ? `Emerging signals: ${signals.map((sig) => `${sig.headline} (${(sig.confidence * 100) | 0}%)`).join("; ")}.`
+        : "No emerging signals.",
+    ].join(" ");
+  }
+
   const zone = ctx.store.zones.find((z) => z.id === ctx.zoneId);
   if (!zone) return "No zone context.";
   const snap = ctx.store.riskSnapshots[ctx.zoneId];
@@ -116,15 +140,20 @@ function operationalSummary(ctx: ToolContext): string {
     .join(" ");
 }
 
-function buildContext(message: string, intent: SetuIntent, ctx: ToolContext): RetrievedContext {
+function buildContext(
+  message: string,
+  intent: SetuIntent,
+  ctx: ToolContext,
+  persona: SetuPersona
+): RetrievedContext {
   return {
-    knowledge: retrieve(message, intent, 3).map((h) => ({
+    knowledge: retrieve(message, intent, 3, PERSONAS[persona].audience).map((h) => ({
       id: h.id,
       title: h.title,
       body: h.body,
       source: h.source,
     })),
-    operational: operationalSummary(ctx),
+    operational: operationalSummary(ctx, persona),
   };
 }
 
@@ -224,6 +253,7 @@ async function composeToolTurn(
     translationRelay: relay,
     enteredTranslationMode: turn.enterTranslationMode,
     exitedTranslationMode: turn.exitTranslationMode,
+    navHint: turn.navHint,
   };
 }
 
@@ -234,12 +264,13 @@ export async function runTurn(input: TurnInput): Promise<TurnResult> {
 
   const preIntent = classifyIntent(input.message).intent;
   const ctx = input.buildToolContext();
-  const context = buildContext(input.message, preIntent, ctx);
+  const context = buildContext(input.message, preIntent, ctx, input.persona);
 
   let turn: SetuTurn;
   try {
     const raw = await llm.planTurn({
       message: input.message,
+      persona: input.persona,
       history: input.history,
       volunteerLanguage: input.volunteerLanguage,
       context,
@@ -249,6 +280,11 @@ export async function runTurn(input: TurnInput): Promise<TurnResult> {
     turn = validateTurn(raw) ?? safeFallbackTurn(input.volunteerLanguage);
   } catch {
     turn = safeFallbackTurn(input.volunteerLanguage);
+  }
+
+  // Hard guard: never run a tool this persona isn't permitted (§13/§35).
+  if (turn.tool && !toolAllowedForPersona(input.persona, turn.tool.name)) {
+    turn = { ...turn, tool: undefined, requiresConfirmation: false, confirmationPrompt: undefined };
   }
 
   applyMemoryEffects(turn, input);
@@ -283,13 +319,14 @@ export async function runTurn(input: TurnInput): Promise<TurnResult> {
       turn,
       intent: turn.intent,
       urgency: turn.urgency,
-      endStatus: turn.followUp ? "speaking" : "speaking",
+      endStatus: "speaking",
       text: turn.followUp ? combine(lead, turn.followUp) : lead,
       textEn: turn.followUp ? combine(leadEn, turn.followUp) : leadEn,
       provenance: turn.provenance,
       reportDraft: turn.reportDraft,
       enteredTranslationMode: turn.enterTranslationMode,
       exitedTranslationMode: turn.exitTranslationMode,
+      navHint: turn.navHint,
     };
   }
 
@@ -329,6 +366,7 @@ export interface PhotoTurnInput {
   dataUrl: string;
   /** What the volunteer said/typed alongside the photo. May be empty. */
   note: string;
+  persona: SetuPersona;
   history: ConversationTurn[];
   volunteerLanguage: LanguageCode;
   offline: boolean;

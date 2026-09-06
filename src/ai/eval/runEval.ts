@@ -42,6 +42,7 @@ async function runOne(s: Scenario): Promise<Result> {
   const t0 = performance.now();
   const raw = await llm.planTurn({
     message: s.message,
+    persona: s.persona ?? "volunteer",
     history: [],
     volunteerLanguage: lang,
     context: ctxFor(s.message, cls.intent),
@@ -69,6 +70,9 @@ async function runOne(s: Scenario): Promise<Result> {
   }
   if (s.expectNoTool && turn.tool) {
     failures.push(`tool: expected none, got ${turn.tool.name}`);
+  }
+  if (s.expectNavHint && turn.navHint?.screen !== s.expectNavHint) {
+    failures.push(`navHint: expected ${s.expectNavHint}, got ${turn.navHint?.screen ?? "(none)"}`);
   }
   if (s.expectConfirm !== undefined) {
     const willConfirm = turn.requiresConfirmation || (turn.tool ? needsConfirmation(turn.tool.name) : false);

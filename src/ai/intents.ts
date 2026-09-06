@@ -60,8 +60,9 @@ const RULES: IntentRule[] = [
     intent: "lost_person",
     weight: 7,
     patterns: [
-      /\b(lost|missing|found)\s+(child|kid|boy|girl|man|woman|person|elder|elderly|father|mother|son|daughter)\b/i,
-      /\b(separated from (my|her|his|their) family|can'?t find my)\b/i,
+      /\b(lost|missing|found)\s+(my|his|her|their|a|an|the)?\s*(child|kid|kids|boy|girl|man|woman|person|people|elder|elderly|father|mother|son|daughter|wife|husband|friend|grand\w+)\b/i,
+      /\b(child|kid|boy|girl|son|daughter|elder|father|mother|friend|wife|husband)\b[^.?!]{0,24}\b(is |has |got |went )?(lost|missing|separated|gone missing|wandered off)\b/i,
+      /\b(separated from (my|her|his|their|the) (family|group)|can'?t find (my|him|her|them|the))\b/i,
       /\bmissing[- ]person\b/i,
     ],
   },

@@ -22,6 +22,7 @@ import {
 import type { SetuStatus, ConversationTurn, GroundReportDraft, Urgency } from "@/ai/schemas";
 import type { SetuIntent } from "@/ai/intents";
 import type { ToolContext } from "@/ai/tools";
+import { PERSONAS, type SetuPersona } from "@/ai/persona";
 
 export interface SetuMessage {
   id: string;
@@ -35,6 +36,8 @@ export interface SetuMessage {
   urgency?: Urgency;
   toolName?: string;
   isFollowUp?: boolean;
+  /** Pilgrim companion: a screen this reply offers to open. */
+  navHint?: { screen: string; label: string };
   translation?: {
     to: LanguageCode;
     detectedSource: LanguageCode;
@@ -44,7 +47,14 @@ export interface SetuMessage {
 }
 
 export interface UseSetuOptions {
-  volunteerId: string;
+  /** pilgrim | volunteer | management — defaults to volunteer. */
+  persona?: SetuPersona;
+  /** Volunteer id (volunteer persona) — which sevak is signed in. */
+  volunteerId?: string;
+  /** Zone id (pilgrim persona) — where the pilgrim is standing. */
+  zoneId?: string;
+  /** Initial interaction language (pilgrim passes the app's language). */
+  language?: LanguageCode;
   /** Called when a turn creates/opens something the surrounding app can show. */
   onCreated?: (kind: "incident" | "groundReport" | "task", id: string) => void;
 }
@@ -52,19 +62,49 @@ export interface UseSetuOptions {
 let msgSeq = 0;
 const mkId = () => `m${Date.now()}-${msgSeq++}`;
 
-export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
+export function useSetu({
+  persona = "volunteer",
+  volunteerId,
+  zoneId,
+  language,
+  onCreated,
+}: UseSetuOptions) {
   const providers = useMemo(() => getProviders(), []);
   const memoryRef = useRef<SetuMemory>(new SetuMemory());
   const listenRef = useRef<{ stop: () => void; abort: () => void } | null>(null);
   const photoRef = useRef<string | null>(null);
 
   const store = useAppStore();
-  const volunteer = store.volunteers.find((v) => v.id === volunteerId) ?? store.volunteers[0];
-  const zone = store.zones.find((z) => z.id === volunteer.zoneId);
   const offline = store.systemStatus.connectivity !== "nominal";
 
+  // The "subject" the companion is bound to differs by persona. Volunteer =
+  // the signed-in sevak; pilgrim = the zone they're standing in; management =
+  // the control room (zone is nominal — its tools read the whole ground).
+  const realVolunteer =
+    persona === "volunteer"
+      ? store.volunteers.find((v) => v.id === volunteerId) ?? store.volunteers[0]
+      : undefined;
+  const boundZone =
+    persona === "volunteer"
+      ? store.zones.find((z) => z.id === realVolunteer!.zoneId)
+      : store.zones.find((z) => z.id === zoneId) ?? store.zones[0];
+  const zone = boundZone;
+  const volunteer =
+    realVolunteer ?? {
+      id: persona === "pilgrim" ? "PILGRIM" : "CONTROL",
+      name: persona === "pilgrim" ? "Pilgrim" : "Control Room",
+      zoneId: boundZone?.id ?? "z01",
+      position: boundZone?.labelPoint ?? { x: 500, y: 300 },
+      availability: "available" as const,
+      skills: [] as string[],
+      languages: [language ?? "en"] as LanguageCode[],
+      shiftStart: "",
+      shiftEnd: "",
+      lastSeen: "now",
+    };
+
   const [volunteerLanguage, setVolunteerLanguage] = useState<LanguageCode>(
-    volunteer.languages[0] ?? "en"
+    language ?? realVolunteer?.languages[0] ?? "en"
   );
   const [status, setStatus] = useState<SetuStatus>("idle");
   const [messages, setMessages] = useState<SetuMessage[]>([]);
@@ -99,18 +139,34 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
 
   const buildToolContext = useCallback((): ToolContext => {
     const s = useAppStore.getState();
-    const v = s.volunteers.find((x) => x.id === volunteerId) ?? s.volunteers[0];
+    if (persona === "volunteer") {
+      const v = s.volunteers.find((x) => x.id === volunteerId) ?? s.volunteers[0];
+      return {
+        store: s,
+        getStore: () => useAppStore.getState(),
+        actor: { role: "volunteer", id: v.id, label: `${v.name} · ${v.id}` },
+        zoneId: v.zoneId,
+        position: v.position,
+        offline: s.systemStatus.connectivity !== "nominal",
+        photo: photoRef.current,
+        translation: providers.translation,
+      };
+    }
+    const z = s.zones.find((x) => x.id === zoneId) ?? s.zones[0];
     return {
       store: s,
       getStore: () => useAppStore.getState(),
-      actor: { role: "volunteer", id: v.id, label: `${v.name} · ${v.id}` },
-      zoneId: v.zoneId,
-      position: v.position,
+      actor:
+        persona === "pilgrim"
+          ? { role: "pilgrim", label: `Pilgrim · ${z.shortName}` }
+          : { role: "management", label: "Control Room" },
+      zoneId: z.id,
+      position: z.labelPoint,
       offline: s.systemStatus.connectivity !== "nominal",
       photo: photoRef.current,
       translation: providers.translation,
     };
-  }, [volunteerId, providers]);
+  }, [persona, volunteerId, zoneId, providers]);
 
   const history = useCallback(
     (): ConversationTurn[] =>
@@ -177,6 +233,7 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
         provenance: res.provenance,
         intent: res.intent,
         urgency: res.urgency,
+        navHint: res.navHint,
         toolName: res.toolResult ? res.turn.tool?.name : undefined,
         translation: res.translationRelay
           ? {
@@ -214,6 +271,7 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
       try {
         const res = await runTurn({
           message: trimmed,
+          persona,
           history: history(),
           volunteerLanguage,
           offline: useAppStore.getState().systemStatus.connectivity !== "nominal",
@@ -230,7 +288,7 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
         });
       }
     },
-    [push, history, volunteerLanguage, buildToolContext, applyResult, translationOther]
+    [push, history, volunteerLanguage, buildToolContext, applyResult, translationOther, persona]
   );
 
   const startListening = useCallback(() => {
@@ -313,6 +371,7 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
         const res = await runPhotoTurn({
           dataUrl,
           note,
+          persona,
           history: history(),
           volunteerLanguage,
           offline: useAppStore.getState().systemStatus.connectivity !== "nominal",
@@ -326,7 +385,7 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
         push({ role: "setu", text: "I couldn't process that photo. Try another, or describe what you see." });
       }
     },
-    [push, history, volunteerLanguage, buildToolContext, applyResult]
+    [push, history, volunteerLanguage, buildToolContext, applyResult, persona]
   );
 
   const confirm = useCallback(async () => {
@@ -434,6 +493,8 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
 
   return {
     // state
+    persona,
+    spec: PERSONAS[persona],
     status,
     messages,
     partial,

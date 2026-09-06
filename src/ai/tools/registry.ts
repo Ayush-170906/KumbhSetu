@@ -642,6 +642,143 @@ export const TOOLS: ToolDef[] = [
     validate: () => ({ ok: true, errors: [], value: {} }),
     run: async () => ({ ok: true, summary: "Translation ended.", data: {} }),
   },
+
+  // ---- control-room only -------------------------------------------------
+  {
+    name: "get_operational_overview",
+    riskClass: "read",
+    authorize: (ctx) => ctx.actor.role === "management",
+    describe: () => "Whole-ground operational overview",
+    validate: () => ({ ok: true, errors: [], value: {} }),
+    run: async (_a, ctx) => {
+      const s = ctx.getStore();
+      const open = s.incidents.filter((i) => !["resolved", "cancelled"].includes(i.status));
+      const crit = open.filter((i) => i.severity === "critical").length;
+      const atRisk = [...s.zones].filter((z) => z.riskBand !== "green").sort((a, b) => b.riskScore - a.riskScore);
+      const avail = s.volunteers.filter((v) => v.availability === "available").length;
+      const onTask = s.volunteers.filter((v) => v.availability === "on_task").length;
+      const signals = s.emergingSignals ?? [];
+      const reports = s.groundReports.filter((r) => !["resolved", "dismissed"].includes(r.status)).length;
+      const riskLine = atRisk.length
+        ? atRisk.map((z) => `${z.shortName} ${z.riskBand} ${z.riskScore}`).join(", ")
+        : "all zones green";
+      return {
+        ok: true,
+        summary:
+          `${open.length} open incident${open.length === 1 ? "" : "s"}${crit ? ` (${crit} critical)` : ""}. ` +
+          `Zones at risk: ${riskLine}. ` +
+          `${signals.length} emerging signal${signals.length === 1 ? "" : "s"}, ${reports} active field report${reports === 1 ? "" : "s"}. ` +
+          `Volunteers: ${avail} available, ${onTask} on task.`,
+        data: { open, atRisk, signals, availableVolunteers: avail, onTask },
+      };
+    },
+  },
+  {
+    name: "get_emerging_signals",
+    riskClass: "read",
+    authorize: (ctx) => ctx.actor.role === "management",
+    describe: () => "Current Kumbh Pulse emerging signals",
+    validate: () => ({ ok: true, errors: [], value: {} }),
+    run: async (_a, ctx) => {
+      const signals = ctx.getStore().emergingSignals ?? [];
+      if (signals.length === 0) {
+        return { ok: true, summary: "No emerging signals right now — field reports are not clustering.", data: { signals: [] } };
+      }
+      const lines = signals
+        .map((sig) => {
+          const zone = ctx.store.zones.find((z) => z.id === sig.zoneId);
+          return `${zone?.shortName ?? sig.zoneId}: ${sig.headline} — ${(sig.confidence * 100) | 0}% confidence, ${sig.reportIds.length} report(s)${sig.pilgrimRequestCount ? ` + ${sig.pilgrimRequestCount} pilgrim request(s)` : ""}. Recommended: ${sig.recommendedAction}`;
+        })
+        .join("  •  ");
+      return { ok: true, summary: lines, data: { signals } };
+    },
+  },
+  {
+    name: "publish_advisory",
+    riskClass: "high_write",
+    authorize: (ctx) => ctx.actor.role === "management",
+    describe: (a) =>
+      `Publish a ${str(a.severity) ?? "advisory"} to ${str(a.scope) === "all" ? "ALL zones (every pilgrim phone)" : str(a.scope) ?? "a zone"} — live on pilgrim apps`,
+    validate: (a, ctx) => {
+      const errors: string[] = [];
+      const scope = str(a.scope) ?? "all";
+      const severity = str(a.severity) ?? "advisory";
+      const message = str(a.message);
+      if (!["info", "advisory", "warning"].includes(severity)) errors.push("severity must be info|advisory|warning");
+      if (!message || message.length < 8) errors.push("message required (a clear instruction)");
+      if (scope !== "all" && !ctx.store.zones.some((z) => z.id === scope || z.shortName.toLowerCase() === scope.toLowerCase())) {
+        errors.push("scope must be 'all' or a known zone");
+      }
+      return { ok: errors.length === 0, errors, value: { scope, severity, message } };
+    },
+    run: async (a, ctx) => {
+      const scopeRaw = a.scope as string;
+      const zone = ctx.store.zones.find(
+        (z) => z.id === scopeRaw || z.shortName.toLowerCase() === scopeRaw.toLowerCase()
+      );
+      const zoneId = scopeRaw === "all" ? "all" : zone?.id ?? scopeRaw;
+      ctx.store.publishAdvisory({
+        zoneId,
+        severity: a.severity as "info" | "advisory" | "warning",
+        message: a.message as string,
+        issuedBy: ctx.actor.label,
+      });
+      return {
+        ok: true,
+        summary: `Advisory published to ${zoneId === "all" ? "all zones" : zone?.shortName ?? zoneId}. It is now live on pilgrim apps in scope.`,
+        data: { zoneId, severity: a.severity },
+        audit: {
+          action: "ADVISORY_PUBLISHED_VIA_SETU",
+          entity: "advisory",
+          entityId: zoneId,
+          metadata: `${a.severity} · ${(a.message as string).slice(0, 60)}`,
+        },
+      };
+    },
+  },
+  {
+    name: "promote_signal_to_incident",
+    riskClass: "high_write",
+    authorize: (ctx) => ctx.actor.role === "management",
+    describe: (a) => `Promote signal ${str(a.signalId) ?? ""} to a dispatchable incident`,
+    validate: (a) => {
+      const has = Boolean(str(a.signalId) || str(a.zoneId) || str(a.category));
+      return {
+        ok: has,
+        errors: has ? [] : ["provide signalId, or a zoneId/category to match a signal"],
+        value: { signalId: str(a.signalId), zoneId: str(a.zoneId), category: str(a.category) },
+      };
+    },
+    run: async (a, ctx) => {
+      const signals = ctx.getStore().emergingSignals ?? [];
+      const sig =
+        signals.find((x) => x.id === a.signalId) ??
+        signals.find(
+          (x) =>
+            (a.zoneId && (x.zoneId === a.zoneId)) ||
+            (a.category && x.category === a.category)
+        ) ??
+        signals[0];
+      if (!sig) return { ok: false, summary: "No emerging signal to promote.", error: "not_found" };
+      const reportId = sig.reportIds[0];
+      if (!reportId) return { ok: false, summary: "That signal has no linked field report to promote.", error: "no_report" };
+      const incident = ctx.store.promoteReportToIncident(reportId, ctx.actor.label);
+      if (!incident) return { ok: false, summary: "Couldn't promote that report — it may already be linked to an incident.", error: "promote_failed" };
+      const assigned = ctx.getStore().incidents.find((i) => i.id === incident.id)?.assignedVolunteerId;
+      return {
+        ok: true,
+        createdId: incident.id,
+        summary: `Signal promoted to incident ${incident.code}${assigned ? ` and dispatched to ${assigned}` : " — awaiting a responder"}.`,
+        data: { incident, signal: sig },
+        audit: {
+          action: "SIGNAL_PROMOTED_VIA_SETU",
+          entity: "incident",
+          entityId: incident.id,
+          metadata: sig.headline,
+        },
+      };
+    },
+  },
 ];
 
 export type ToolName = (typeof TOOLS)[number]["name"];

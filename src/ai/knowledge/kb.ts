@@ -8,6 +8,8 @@
 
 import type { SetuIntent } from "@/ai/intents";
 
+export type KBAudience = "pilgrim" | "volunteer" | "management";
+
 export interface KBEntry {
   id: string;
   title: string;
@@ -19,6 +21,9 @@ export interface KBEntry {
   /** Ordered actions, for "what do I do / give me the steps" questions.
    *  Setu renders these as a numbered list. */
   steps?: string[];
+  /** Who this passage is written for. Absent = useful to everyone. Retrieval
+   *  gives a small bonus to passages that match the asker's role. */
+  audience?: KBAudience[];
 }
 
 export const KB: KBEntry[] = [
@@ -159,6 +164,212 @@ export const KB: KBEntry[] = [
     tags: ["simulation", "demo", "synthetic", "about"],
     intents: ["information", "other"],
   },
+
+  // ======================================================================
+  // KUMBH MELA — background knowledge (general, well-established tradition).
+  // Written for this prototype's knowledge assistant. Specific dates, counts
+  // and schedules are deliberately deferred to the mela authority / notice
+  // boards / control room rather than stated as fact.
+  // ======================================================================
+  {
+    id: "kb-kumbh-what",
+    title: "What the Kumbh Mela is",
+    body: "The Kumbh Mela is a Hindu pilgrimage of mass devotion centred on a sacred bath (snan) in a holy river. It is held in rotation at four places: Prayagraj (Ganga–Yamuna–Saraswati confluence), Haridwar (Ganga), Nashik with Trimbakeshwar (Godavari), and Ujjain (Shipra). Each site hosts a full Kumbh roughly every twelve years, with the exact timing fixed by the positions of Jupiter, the Sun and the Moon. It is one of the largest peaceful gatherings of people anywhere in the world.",
+    source: "Kumbh Setu knowledge base — background",
+    tags: ["kumbh", "mela", "what", "about", "pilgrimage", "prayagraj", "haridwar", "ujjain", "nashik", "snan", "history"],
+    intents: ["religious_information", "information"],
+  },
+  {
+    id: "kb-kumbh-origin",
+    title: "The origin story of the Kumbh",
+    body: "By tradition, the Kumbh recalls the Samudra Manthan — the churning of the cosmic ocean by the devas and asuras to obtain amrit, the nectar of immortality. In the struggle over the kumbh (pot) of amrit, drops are said to have fallen at four places on earth, which became the four Kumbh sites. The pursuit is said to have lasted twelve divine days — twelve human years — which is why each site's Kumbh returns about every twelve years.",
+    source: "Kumbh Setu knowledge base — background",
+    tags: ["origin", "story", "samudra manthan", "amrit", "nectar", "myth", "legend", "kumbh", "pot", "why twelve years"],
+    intents: ["religious_information", "information"],
+  },
+  {
+    id: "kb-simhastha-nashik",
+    title: "Simhastha — the Nashik–Trimbakeshwar Kumbh",
+    body: "At Nashik the Kumbh is called Simhastha, because it falls when Jupiter (Guru) is in the zodiac sign of Simha (Leo). The bathing is spread across two clusters about 28–30 km apart: the Godavari ghats in Nashik city (Ramkund, Tapovan and others) and the Trimbakeshwar temple town, where the Kushavarta Kund is revered as the source of the Godavari. A transit corridor and shuttle route connect the two.",
+    source: "Kumbh Setu knowledge base — Nashik / Trimbakeshwar",
+    tags: ["simhastha", "nashik", "trimbakeshwar", "godavari", "jupiter", "leo", "simha", "ramkund", "kushavarta", "corridor", "two clusters"],
+    intents: ["religious_information", "navigation", "information"],
+  },
+  {
+    id: "kb-shahi-snan",
+    title: "Shahi Snan / Amrit Snan — the royal bath days",
+    body: "The most auspicious bathing days are the Shahi Snan (now often called Amrit Snan). On these days the akharas process to the ghats in a fixed traditional order and bathe first, followed by the wider public. These are the highest-crowd days of the whole Mela. The exact dates and the akhara procession schedule are set by the Mela authority from the astrological calendar and published on notice boards and to the control room — Setu does not invent them.",
+    source: "Kumbh Setu knowledge base — bathing days",
+    tags: ["shahi snan", "amrit snan", "royal bath", "muhurat", "bathing day", "akhara procession", "auspicious", "peak crowd", "dates"],
+    intents: ["religious_information", "crowd", "information"],
+  },
+  {
+    id: "kb-akharas",
+    title: "The akharas",
+    body: "Akharas are monastic orders of ascetics, traditionally thirteen recognised, grouped broadly as Shaiva (Sanyasi), Vaishnava (Bairagi) and Udasin / Nirmal. Their organisation is traditionally credited to Adi Shankaracharya. At the Kumbh the akharas lead the processions to the river on the royal-bath days and bathe first, in an order fixed by long-standing precedence. During a procession, marshals hold the route for the akhara; the public bathes after it has passed.",
+    source: "Kumbh Setu knowledge base — akharas",
+    tags: ["akhara", "akharas", "sadhu", "naga", "ascetic", "shaiva", "vaishnava", "udasin", "shankaracharya", "procession", "peshwai"],
+    intents: ["religious_information", "information", "crowd"],
+  },
+  {
+    id: "kb-trimbakeshwar-temple",
+    title: "Trimbakeshwar temple and Kushavarta",
+    body: "The Trimbakeshwar temple enshrines one of the twelve Jyotirlingas of Shiva; its lingam is unusual in showing three faces, associated with Brahma, Vishnu and Shiva (Tryambaka). Nearby, the Kushavarta Kund is the sacred tank held to be the origin of the Godavari, which rises in the Brahmagiri hills above the town. Darshan queues at the temple are longest around festival days and the royal-bath windows.",
+    source: "Kumbh Setu knowledge base — Trimbakeshwar",
+    tags: ["trimbakeshwar", "temple", "jyotirlinga", "shiva", "kushavarta", "kund", "godavari", "brahmagiri", "darshan", "three faces"],
+    intents: ["religious_information", "navigation", "information"],
+  },
+  {
+    id: "kb-ramkund",
+    title: "Ramkund and the Nashik ghats",
+    body: "Ramkund, on the Godavari in Nashik city, is the central bathing spot and is also used for asthi-visarjan (immersion of ashes) and pind-daan rites; it is associated in tradition with Rama's stay in the region. Tapovan and other ghats spread the bathing load along the river. Follow the marked entry and exit lanes at each ghat, keep to the shallow marked area, and do not enter the water where lifeguards signal against it.",
+    source: "Kumbh Setu knowledge base — Nashik ghats",
+    tags: ["ramkund", "tapovan", "ghat", "nashik", "godavari", "asthi", "pind daan", "bathing", "rama", "lanes"],
+    intents: ["religious_information", "navigation", "safety"],
+  },
+  {
+    id: "kb-bathing-etiquette",
+    title: "Bathing etiquette and river care",
+    body: "Bathe in the marked shallow area and follow the entry/exit lanes. Do not use soap, shampoo or oil in the river, and do not leave clothing, plastic or offerings in the water — use the bins and designated immersion points. Keep bathing brief on high-crowd days so others can take their turn. Non-swimmers should stay where they can stand; children must be held at all times.",
+    source: "Kumbh Setu knowledge base — river care",
+    tags: ["bathing", "etiquette", "soap", "river", "clean", "plastic", "offerings", "immersion", "swimming", "lanes", "environment"],
+    intents: ["religious_information", "safety", "information"],
+  },
+  {
+    id: "kb-pilgrim-safety",
+    title: "Staying safe in the crowd (for pilgrims)",
+    body: "Keep to the left and keep moving; do not stop to gather or take photos on bridges, ramps or stairs. Agree a fixed meeting point with your group in case you are separated. Carry only what you need; keep valuables in a front pocket or pouch. Wear firm footwear you can walk long distances in. If the crowd around you tightens so you cannot move freely, stay upright, keep your arms in front of your chest, and move with the flow toward the nearest edge — do not push back against it.",
+    source: "Kumbh Setu knowledge base — pilgrim safety",
+    tags: ["safety", "crowd", "bridge", "photo", "meeting point", "valuables", "footwear", "separated", "pressure", "keep left"],
+    intents: ["safety", "crowd", "information"],
+    audience: ["pilgrim"],
+  },
+  {
+    id: "kb-children-safety",
+    title: "Keeping children safe",
+    body: "Write your name and mobile number on a band or slip inside the child's clothing before you set out. Hold small children at the ghats and on stairs at all times. Show the child which uniform to look for (volunteers and police) and point out the nearest Help Desk when you arrive somewhere new. If a child is missing, go to the nearest Help Desk or volunteer immediately — do not spend time searching alone; the control room coordinates reunification against found-child reports.",
+    source: "Kumbh Setu knowledge base — families",
+    tags: ["child", "children", "kid", "family", "band", "wristband", "missing", "lost", "help desk", "reunification"],
+    intents: ["lost_person", "safety", "information"],
+  },
+  {
+    id: "kb-health-heat-hydration",
+    title: "Health in the heat and the crowd",
+    body: "Drink water regularly, but only from marked water points or sealed bottles — not from the river or unmarked taps. Rest in shade in the hottest hours (roughly 11:00–16:00). Watch for dizziness, a pounding heart, cramps or confusion in yourself and those with you, and move to a medical camp early rather than pushing on. People with heart conditions, breathing conditions or in late pregnancy should avoid the densest areas and the royal-bath peak.",
+    source: "Kumbh Setu knowledge base — health",
+    tags: ["health", "heat", "hydration", "water", "shade", "dizzy", "cramp", "medical camp", "heart", "pregnancy", "safe water"],
+    intents: ["medical", "water", "information"],
+  },
+  {
+    id: "kb-facilities-overview",
+    title: "Facilities you can expect",
+    body: "Each zone has at least one medical camp, water points (piaus), sanitation blocks, and a Help Desk; larger zones add food service (annakshetra / langar), cloakrooms for luggage, and lost-and-found. Facilities are marked on the map in the app. Status shown as 'limited' means it is open but busy. If a facility you need is closed or overloaded, ask Setu for the next nearest one rather than waiting.",
+    source: "Kumbh Setu facility guide — overview",
+    tags: ["facility", "facilities", "medical camp", "water point", "piau", "toilet", "sanitation", "help desk", "food", "langar", "cloakroom", "luggage", "lost and found"],
+    intents: ["navigation", "information", "water", "toilet", "food"],
+  },
+  {
+    id: "kb-luggage-cloakroom",
+    title: "Luggage and cloakrooms",
+    body: "Do not carry large bags to the ghats — the bathing areas are crowded and you cannot watch a bag while you bathe. Use a cloakroom near the transit points or your accommodation to leave luggage, keep the token safe, and take only essentials (ID, phone, a little cash, medication) in a small pouch. Bags left unattended in the crowd may be treated as a security concern and removed.",
+    source: "Kumbh Setu facility guide — cloakrooms",
+    tags: ["luggage", "bag", "cloakroom", "baggage", "token", "unattended", "belongings", "storage"],
+    intents: ["navigation", "safety", "information"],
+    audience: ["pilgrim"],
+  },
+  {
+    id: "kb-transport-arrival",
+    title: "Getting to and around the Mela",
+    body: "Nashik is reached by road, rail (Nashik Road station) and the nearest airports; from the city, a shuttle corridor connects the Godavari ghats with the Trimbakeshwar cluster. Private vehicles are not allowed on ghat approaches during the royal-bath windows — park in the signed parking zone for your cluster and use the shuttle for the last stretch. Allow far more time than usual on high-crowd days, and note your parking zone and row before you walk in.",
+    source: "Kumbh Setu knowledge base — transport",
+    tags: ["transport", "arrive", "reach", "nashik road", "station", "airport", "shuttle", "bus", "parking", "corridor", "private vehicle", "route"],
+    intents: ["transport", "navigation", "information"],
+  },
+  {
+    id: "kb-lost-found-pilgrim",
+    title: "If you lose a person or a belonging",
+    body: "For a lost person: go to the nearest Help Desk or volunteer and give a description and where you last saw them; the control room matches this against found-person reports and public-address calls. For a lost belonging: report it at a Help Desk or the lost-and-found point with a description and where you think it was lost. Announcements are made from Help Desks; check back there rather than searching the crowd yourself.",
+    source: "Kumbh Setu knowledge base — lost & found",
+    tags: ["lost", "found", "missing", "belonging", "wallet", "phone", "bag", "person", "help desk", "announcement", "reunite"],
+    intents: ["lost_person", "information"],
+    audience: ["pilgrim"],
+  },
+  {
+    id: "kb-get-help",
+    title: "How to get help quickly",
+    body: "The fastest help is the nearest volunteer (in uniform) or Help Desk — every zone has both. In the app, the SOS button sends your location and the type of problem to the nearest volunteer and the control room in one confirmed tap, and keeps trying on a fallback path if the network is weak. Use SOS for anything urgent: a medical problem, someone missing, feeling unsafe, or being caught in dangerous crowding.",
+    source: "Kumbh Setu knowledge base — getting help",
+    tags: ["help", "sos", "emergency", "volunteer", "help desk", "urgent", "assistance", "police", "uniform"],
+    intents: ["emergency", "safety", "information"],
+    audience: ["pilgrim"],
+  },
+  {
+    id: "kb-etiquette-rules",
+    title: "Rules and etiquette on site",
+    body: "Carry a valid photo ID. No plastic bags or single-use plastic; use the bins and keep the ghats clean. Follow the one-way lanes and the directions of volunteers and police, especially near the ghats and on bridges. Photography of people bathing, and of the akharas without permission, is discouraged. Alcohol and drugs are prohibited. Queue patiently on darshan and bathing lines — pushing endangers everyone.",
+    source: "Kumbh Setu knowledge base — rules",
+    tags: ["rules", "etiquette", "id", "plastic", "photography", "one-way", "alcohol", "queue", "conduct", "prohibited"],
+    intents: ["information", "safety"],
+  },
+  {
+    id: "kb-vol-akhara-procession",
+    title: "Working a royal-bath / akhara procession (for volunteers)",
+    body: "On procession days your job is to hold the route and keep the public flow moving alongside it, not to stop everything. Keep the akhara corridor clear, keep pilgrims to the marked side, and keep them moving — a standing crowd along a barrier is where pressure builds. Coordinate hand-offs with the marshal ahead of and behind you so there are no gaps. Report the tail of the procession passing so downstream stages can reopen the crossing.",
+    source: "Kumbh Setu volunteer SOP — Processions (demo knowledge base)",
+    tags: ["procession", "akhara", "royal bath", "shahi snan", "route", "corridor", "barrier", "flow", "marshal", "handoff", "crossing"],
+    intents: ["crowd", "safety", "volunteer_task"],
+    audience: ["volunteer"],
+  },
+  {
+    id: "kb-vol-shift-handover",
+    title: "Shift start and handover (for volunteers)",
+    body: "At shift start, check your zone brief in Setu, confirm your availability, and note where the nearest medical camp, Help Desk and water points are. Carry your ID and any first-response items issued to you. At handover, brief the next volunteer on anything open: active tasks, a facility that is limited or closed, a spot where crowding has been building, and any ground report you have raised that is not yet resolved.",
+    source: "Kumbh Setu volunteer SOP — Shift (demo knowledge base)",
+    tags: ["shift", "handover", "start", "brief", "availability", "handoff", "first response", "kit"],
+    intents: ["volunteer_task", "information"],
+    audience: ["volunteer"],
+  },
+  {
+    id: "kb-vol-suspicious-item",
+    title: "Unattended or suspicious items (for volunteers)",
+    body: "Do not touch or move an unattended bag. Note its exact location and what it looks like, keep people a few metres back without causing a rush, and report it to the control room with the location — they involve police. If a nearby owner claims it, ask them to open it themselves in your sight. Most unattended bags are simply lost or set down; treat every one calmly but by the same procedure.",
+    source: "Kumbh Setu volunteer SOP — Security (demo knowledge base)",
+    tags: ["suspicious", "unattended", "bag", "item", "security", "police", "bomb", "package", "cordon"],
+    intents: ["safety", "volunteer_task"],
+    audience: ["volunteer"],
+    steps: [
+      "Do not touch or move it. Note its exact location and description.",
+      "Move people a few metres back calmly — do not shout or cause a rush.",
+      "Report to the control room with the precise location; they bring in police.",
+      "If someone says it is theirs, ask them to open it themselves where you can see.",
+      "Stay until police or a supervisor takes over.",
+    ],
+  },
+  {
+    id: "kb-mgmt-decision-support",
+    title: "Reading Kumbh Pulse and acting on it (for the control room)",
+    body: "Kumbh Pulse is decision support, not an instruction. A green zone means routine monitoring; yellow means raise attention and preventive readiness; red means a prominent alert for human review. An emerging signal aggregates several weak field reports — its confidence rises with independent corroboration. Verify against the resource feed and a call to the zone before acting, then promote the signal to an incident to dispatch. Every action is written to the event log with actor and time.",
+    source: "Kumbh Setu operations guide — decision support (demo)",
+    tags: ["pulse", "signal", "emerging", "confidence", "decision", "control room", "promote", "dispatch", "advisory", "corroborate", "band"],
+    intents: ["zone_intelligence", "information", "resource"],
+    audience: ["management"],
+  },
+  {
+    id: "kb-mgmt-advisory-wording",
+    title: "Writing an advisory that helps (for the control room)",
+    body: "An advisory reaches every pilgrim phone in scope, so word it as a specific instruction, not a warning. Say what to do and where ('Use Gate 2 for Ramkund; Gate 1 approach is held'), keep it to one or two sentences, and avoid the words 'panic' or 'danger'. Choose the smallest scope that covers the situation — a single zone rather than event-wide — and retract it as soon as it no longer applies so advisories stay trusted.",
+    source: "Kumbh Setu operations guide — advisories (demo)",
+    tags: ["advisory", "notice", "warning", "wording", "instruction", "scope", "zone", "retract", "pilgrim", "communication"],
+    intents: ["information"],
+    audience: ["management"],
+    steps: [
+      "State the action and the place ('Use Gate 2 for Ramkund; Gate 1 is held').",
+      "Keep it to one or two sentences; never use 'panic' or 'danger'.",
+      "Pick the smallest scope that fits — one zone before event-wide.",
+      "Publish, and tell the affected volunteers on the zone channel.",
+      "Retract it the moment it no longer applies.",
+    ],
+  },
 ];
 
 export interface Retrieval {
@@ -185,7 +396,12 @@ function tokens(s: string): string[] {
  * most `k`, and only entries that clear a floor — so "no verified info" is a
  * real possible outcome (§23).
  */
-export function retrieve(query: string, intent: SetuIntent, k = 3): Retrieval[] {
+export function retrieve(
+  query: string,
+  intent: SetuIntent,
+  k = 3,
+  audience?: KBAudience
+): Retrieval[] {
   const q = tokens(query);
   if (q.length === 0 && intent === "other") return [];
 
@@ -202,6 +418,12 @@ export function retrieve(query: string, intent: SetuIntent, k = 3): Retrieval[] 
       if (bodyTok.has(w)) score += 1;
     }
     if (e.intents.includes(intent)) score += 4;
+
+    // Nudge role-specific passages toward the asker; gently push away passages
+    // written for a different role so a pilgrim doesn't get a volunteer SOP.
+    if (audience && e.audience) {
+      score += e.audience.includes(audience) ? 3 : -4;
+    }
 
     return { entry: e, score };
   });

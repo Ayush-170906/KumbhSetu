@@ -6,6 +6,7 @@ import { LANGUAGE_LABELS } from "@/lib/i18n";
 import { Icon } from "@/components/ui/Icon";
 import { SimTag } from "@/components/ui/SimTag";
 import { useSetu } from "@/ai/useSetu";
+import type { SetuPersona } from "@/ai/persona";
 import { SetuOrb } from "./SetuOrb";
 import { SetuTranscript } from "./SetuTranscript";
 import { SetuComposer } from "./SetuComposer";
@@ -15,28 +16,30 @@ import { SetuTranslatePanel } from "./SetuTranslatePanel";
 
 const LANGS: LanguageCode[] = ["en", "hi", "mr", "ta"];
 
-const BASE_CHIPS = [
-  "Nearest medical camp",
-  "What's happening in my zone",
-  "Help me talk to a Tamil-speaking pilgrim",
-  "Report a water shortage here",
-  "My tasks",
-];
-
 export function SetuCompanion({
+  persona = "volunteer",
   volunteerId,
+  zoneId,
+  language,
   variant = "full",
   onCreated,
+  onNavHint,
   emptyStateExtra,
 }: {
-  volunteerId: string;
+  persona?: SetuPersona;
+  volunteerId?: string;
+  zoneId?: string;
+  language?: LanguageCode;
   variant?: "full" | "embedded";
   onCreated?: (kind: "incident" | "groundReport" | "task", id: string) => void;
+  /** Pilgrim companion: open a screen the reply suggests. */
+  onNavHint?: (screen: string) => void;
   /** Rendered under the orb before a conversation starts (field-status panels). */
   emptyStateExtra?: ReactNode;
 }) {
-  const setu = useSetu({ volunteerId, onCreated });
+  const setu = useSetu({ persona, volunteerId, zoneId, language, onCreated });
   const {
+    spec,
     status,
     messages,
     partial,
@@ -62,10 +65,9 @@ export function SetuCompanion({
   const conversationStarted = messages.length > 0;
 
   const chips = useMemo(() => {
-    const base = [...BASE_CHIPS];
     if (reportDraft && reportDraft.missing.length > 0) return []; // let them answer the follow-up
-    return base;
-  }, [reportDraft]);
+    return spec.chips;
+  }, [reportDraft, spec]);
 
   function toggleListen() {
     if (status === "listening") return setu.stopListening();
@@ -147,8 +149,8 @@ export function SetuCompanion({
       {!conversationStarted ? (
         <div className="flex-1 overflow-y-auto scroll-thin flex flex-col items-center px-6 pt-8 pb-4 gap-6">
           <div className="text-center">
-            <div className="text-[12px] font-semibold uppercase tracking-[0.16em] text-ink">Kumbh Setu AI</div>
-            <div className="text-xs text-ink-muted mt-0.5">Voice-first field companion</div>
+            <div className="text-[12px] font-semibold uppercase tracking-[0.16em] text-ink">{spec.title}</div>
+            <div className="text-xs text-ink-muted mt-0.5">{spec.subtitle}</div>
           </div>
           <SetuOrb
             status={status}
@@ -171,7 +173,7 @@ export function SetuCompanion({
                   </button>
                 </>
               ) : (
-                <>Type your question below, or tap the camera. Everything works without voice.</>
+                <>{spec.emptyHint}</>
               )}
             </div>
           )}
@@ -206,6 +208,17 @@ export function SetuCompanion({
               onCancel={setu.cancel}
             />
           )}
+          {lastSetu?.navHint && onNavHint && (
+            <div className="px-3 pb-2">
+              <button
+                onClick={() => onNavHint(lastSetu.navHint!.screen)}
+                className="w-full flex items-center justify-center gap-2 rounded-sm bg-primary text-white text-sm font-medium py-2.5 hover:bg-primary-dark transition-colors"
+              >
+                {lastSetu.navHint.label}
+                <Icon name="arrow-right" className="h-4 w-4" />
+              </button>
+            </div>
+          )}
           {lastError && <div className="px-4 pb-1 text-xs text-status-amber">{lastError}</div>}
           <div className="flex items-center justify-center gap-4 py-2 border-t border-border bg-surface">
             <SetuOrb
@@ -228,7 +241,7 @@ export function SetuCompanion({
             : "Type, or use the camera…"
         }
         onSend={setu.sendText}
-        onPhoto={setu.sendPhoto}
+        onPhoto={persona === "volunteer" ? setu.sendPhoto : undefined}
         inputRef={composerRef}
       />
     </div>
