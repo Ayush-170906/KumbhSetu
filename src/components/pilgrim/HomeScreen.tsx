@@ -124,7 +124,23 @@ export function HomeScreen({
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-2.5 mx-4 mt-4">
+      <button
+        onClick={() => onNavigate("plan")}
+        className="mx-4 mt-4 w-[calc(100%-2rem)] flex items-center gap-3 rounded-sm border border-primary/40 bg-primary-soft/50 px-3.5 py-3 text-left hover:bg-primary-soft transition-colors"
+      >
+        <div className="h-9 w-9 rounded-sm bg-primary flex items-center justify-center shrink-0">
+          <Icon name="route" className="h-4.5 w-4.5 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold text-ink">{t("planKumbh", language)} Mela</div>
+          <div className="text-[11px] text-ink-muted">
+            Itinerary · travel · stay · darshan · eat · every Kumbh link
+          </div>
+        </div>
+        <Icon name="chevron-right" className="h-4 w-4 text-primary shrink-0" />
+      </button>
+
+      <div className="grid grid-cols-3 gap-2.5 mx-4 mt-3">
         {actions.map((a) => (
           <button
             key={a.screen}
