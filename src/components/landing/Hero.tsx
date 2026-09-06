@@ -25,9 +25,9 @@ export function Hero() {
           reference points.
         </p>
         <div className="flex flex-wrap items-center gap-3 mt-8">
-          <a href="#roles">
-            <Button size="lg">Explore the System</Button>
-          </a>
+          <Link href="/">
+            <Button size="lg">Choose your role</Button>
+          </Link>
           <Link href="/demo">
             <Button size="lg" variant="outline">Run Live Demo</Button>
           </Link>
