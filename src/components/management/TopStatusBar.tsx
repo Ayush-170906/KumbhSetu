@@ -44,7 +44,7 @@ export function TopStatusBar({
         </div>
       </Link>
 
-      <SimTag />
+      <SimTag label="SYNTHETIC DATA" />
 
       <StatItem
         label="Connectivity"

@@ -272,7 +272,9 @@ export function SetuCompanion({
         placeholder={
           reportDraft && reportDraft.missing.length > 0
             ? `Answer: ${reportDraft.missing[0]}…`
-            : "Type, or use the camera…"
+            : persona === "volunteer"
+            ? "Type, or use the camera…"
+            : "Type your question…"
         }
         onSend={setu.sendText}
         onChip={handleChip}

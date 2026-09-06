@@ -72,7 +72,7 @@ export function OperationsView({
                 Real Map (GIS)
               </button>
             </div>
-            <SimTag />
+            <SimTag label="Simulated map" />
           </div>
         </div>
         <div className="flex-1 min-h-0 rounded-sm border border-border overflow-hidden bg-surface">

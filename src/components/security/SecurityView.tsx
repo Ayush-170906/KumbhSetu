@@ -1,5 +1,7 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
+
 type Camera = {
   id: number;
   name: string;
@@ -73,18 +75,23 @@ export function SecurityView() {
       
       {/* HEADER */}
       <div className="mb-6">
-        <p className="text-sm text-gray-500">
-          KumbhSetu Security Layer
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
+          Concept · not a capability claim
         </p>
 
-        <h1 className="text-3xl font-bold">
-          Security Intelligence Center
-        </h1>
+        <h1 className="font-editorial text-2xl text-ink mt-1">Security — concept view</h1>
 
-        <p className="text-gray-500 mt-2">
-          Concept view for CCTV monitoring and security alerts &mdash; simulated data,
-          no live camera network connected.
+        <p className="text-sm text-ink-muted mt-2 max-w-2xl leading-relaxed">
+          An illustration of how camera-based alerts <em>could</em> surface to an operator if a
+          venue integrated an approved CCTV/analytics system in future. Kumbh Setu has no camera
+          network, runs no video analytics, and makes no claim to. Everything below is mocked
+          imagery with drawn-on overlays.
         </p>
+
+        <div className="mt-3 inline-flex items-center gap-2 rounded-sm border border-status-amber-border bg-status-amber-bg px-3 py-1.5 text-xs font-medium text-status-amber">
+          <Icon name="warning" className="h-3.5 w-3.5" />
+          Illustrative only — no live feeds, no real detections, not part of the demo workflow.
+        </div>
       </div>
 
       {/* STATUS CARDS */}

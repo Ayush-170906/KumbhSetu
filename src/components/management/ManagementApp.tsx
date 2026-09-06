@@ -69,8 +69,18 @@ export default function ManagementApp() {
         )}
 
         {view === "copilot" && (
-          <div className="flex-1 min-h-0 flex justify-center bg-ivory">
-            <div className="w-full max-w-2xl flex flex-col min-h-0 border-x border-border">
+          <div className="flex-1 min-h-0 flex flex-col items-center bg-ivory">
+            <div className="w-full max-w-2xl border-x border-border bg-surface px-4 py-2.5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
+                AI · Ops Copilot
+              </div>
+              <p className="text-xs text-ink-muted mt-0.5">
+                Ask for a briefing, a zone risk explanation, a responder recommendation or an
+                advisory draft. High-impact actions are proposed, never executed without your
+                confirmation.
+              </p>
+            </div>
+            <div className="w-full max-w-2xl flex-1 flex flex-col min-h-0 border-x border-border">
               <SetuCompanion persona="management" variant="full" />
             </div>
           </div>
