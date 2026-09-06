@@ -11,6 +11,8 @@
 import type { LanguageCode } from "@/lib/types";
 import type { SetuTurn, SetuTurnRequest } from "@/ai/schemas";
 import { validateTurn } from "@/ai/schemas";
+import { PERSONAS } from "@/ai/persona";
+import { openAiToolSchemas, intentForTool } from "@/ai/tools/toolSchemas";
 import type {
   AIProvider,
   ProviderInfo,
@@ -42,6 +44,12 @@ export class SarvamLLMProvider implements AIProvider {
   private fallback = new MockLLMProvider();
 
   async planTurn(req: SetuTurnRequest): Promise<SetuTurn> {
+    const allowed = PERSONAS[req.persona]?.allowedTools ?? [];
+    const tools = openAiToolSchemas(allowed as readonly string[]);
+    // Reasoning model for the control room; conversational model for voice-first
+    // pilgrim / volunteer turns.
+    const conversational = req.persona !== "management";
+
     try {
       const res = await fetch("/api/setu/chat", {
         method: "POST",
@@ -50,20 +58,50 @@ export class SarvamLLMProvider implements AIProvider {
           message: req.message,
           persona: req.persona,
           language: req.volunteerLanguage,
+          conversational,
           offline: req.offline,
           operational: req.context.operational,
           knowledge: req.context.knowledge.map((k) => ({ title: k.title, body: k.body })),
           history: req.history.map((h) => ({ role: h.role, text: h.text })),
+          tools,
         }),
       });
-      if (!res.ok) throw new Error(`chat ${res.status}`);
+      if (!res.ok) {
+        let reason = `chat_${res.status}`;
+        try {
+          const j = await res.json();
+          if (j?.reason) reason = j.reason;
+        } catch {}
+        throw new Error(reason);
+      }
       const data = await res.json();
-      const turn = data?.ok ? validateTurn(data.turn) : null;
-      if (!turn) throw new Error("invalid turn");
+      if (!data?.ok) throw new Error(data?.reason || "chat_failed");
+
+      const content: string = typeof data.content === "string" ? data.content.trim() : "";
+      const call: { name: string; arguments: Record<string, unknown> } | null = data.tool ?? null;
+
+      const replyText =
+        content ||
+        (call
+          ? "Let me check that for you."
+          : "I didn't quite get that — try again, or type it.");
+
+      const candidate: SetuTurn = {
+        intent: intentForTool(call?.name) as SetuTurn["intent"],
+        urgency: "routine",
+        reply: { [req.volunteerLanguage]: replyText, en: replyText },
+        tool: call ? { name: call.name as never, arguments: call.arguments || {} } : undefined,
+        // The orchestrator applies the registry's own risk/confirmation gate
+        // (needsConfirmation(toolName)) regardless — we don't set it true here
+        // because validateTurn then also requires a confirmationPrompt.
+        requiresConfirmation: false,
+        provenance: `Sarvam ${data.model || ""}`.trim(),
+      };
+
+      const turn = validateTurn(candidate);
+      if (!turn) throw new Error("invalid_turn");
       sarvamRuntime.chat = true;
-      turn.provenance = turn.provenance
-        ? `${turn.provenance} · Sarvam ${data.model || ""}`.trim()
-        : "Sarvam AI";
+      sarvamRuntime.lastError = "";
       return turn;
     } catch (e) {
       sarvamRuntime.chat = false;

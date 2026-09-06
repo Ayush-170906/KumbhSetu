@@ -10,7 +10,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LanguageCode } from "@/lib/types";
 import { useAppStore } from "@/store/useAppStore";
-import { getProviders } from "@/ai/providers";
+import { getProviders, probeSetuStatus } from "@/ai/providers";
+import { sarvamRuntime } from "@/ai/providers/sarvamProvider";
 import { SetuMemory } from "@/ai/memory";
 import {
   runTurn,
@@ -70,6 +71,21 @@ export function useSetu({
   onCreated,
 }: UseSetuOptions) {
   const providers = useMemo(() => getProviders(), []);
+  const [liveCaps, setLiveCaps] = useState<{ chat: boolean; translation: boolean; tts: boolean }>({
+    chat: false,
+    translation: false,
+    tts: false,
+  });
+  useEffect(() => {
+    if (providers.mode !== "live") return;
+    let ok = true;
+    probeSetuStatus().then((s) => {
+      if (ok) setLiveCaps({ chat: s.chat, translation: s.translation, tts: s.tts });
+    });
+    return () => {
+      ok = false;
+    };
+  }, [providers.mode]);
   const memoryRef = useRef<SetuMemory>(new SetuMemory());
   const listenRef = useRef<{ stop: () => void; abort: () => void } | null>(null);
   const photoRef = useRef<string | null>(null);
@@ -514,7 +530,16 @@ export function useSetu({
       llm: providers.llm.info,
       speech: providers.speech.info,
       translation: providers.translation.info,
-      allSimulated: providers.allSimulated,
+      // "simulation" until the server confirms a live Sarvam chat path;
+      // "degraded" once a live call has fallen back to the local engine.
+      status:
+        providers.mode === "live" && liveCaps.chat
+          ? sarvamRuntime.lastError
+            ? ("degraded" as const)
+            : ("live" as const)
+          : ("simulation" as const),
+      liveCaps,
+      allSimulated: providers.allSimulated && !liveCaps.chat,
     },
     hasPhoto: () => photoRef.current !== null,
     // actions

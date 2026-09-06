@@ -253,13 +253,25 @@ function ProviderStrip({
   offline,
   inline,
 }: {
-  providerInfo: { llm: { name: string }; translation: { name: string }; allSimulated: boolean };
+  providerInfo: {
+    llm: { name: string };
+    translation: { name: string };
+    allSimulated: boolean;
+    status?: "live" | "degraded" | "simulation";
+  };
   offline: boolean;
   inline?: boolean;
 }) {
+  const status = providerInfo.status ?? (providerInfo.allSimulated ? "simulation" : "live");
+  const label =
+    status === "live"
+      ? "SETU AI · LIVE (SARVAM)"
+      : status === "degraded"
+      ? "SETU AI · DEGRADED — LOCAL ENGINE"
+      : "SETU AI · SIMULATION MODE";
   return (
     <div className={`flex items-center gap-2 ${inline ? "" : "px-4 py-1.5 border-b border-border bg-surface"}`}>
-      <SimTag label={providerInfo.allSimulated ? "SIMULATION MODE" : "LIVE PROVIDERS"} />
+      <SimTag label={label} />
       {offline && (
         <span className="text-[10px] font-semibold uppercase tracking-wide text-status-amber flex items-center gap-1">
           <Icon name="wifi-off" className="h-3 w-3" />

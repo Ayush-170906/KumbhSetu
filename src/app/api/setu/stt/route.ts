@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sarvamEnabled, sarvamFetch, SARVAM_STT_MODEL } from "@/lib/serverEnv";
+import { sarvamEnabled, sarvamFetch, sarvamErrorReason, SARVAM_STT_MODEL } from "@/lib/serverEnv";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,7 +39,8 @@ export async function POST(req: Request) {
 
     const res = await sarvamFetch("/speech-to-text", { method: "POST", body: upstream }, 20_000);
     if (!res.ok) {
-      return NextResponse.json({ ok: false, reason: `sarvam_${res.status}` }, { status: 502 });
+      const err = sarvamErrorReason(res.status);
+      return NextResponse.json({ ok: false, reason: err.reason }, { status: err.status });
     }
     const data = await res.json();
     return NextResponse.json({

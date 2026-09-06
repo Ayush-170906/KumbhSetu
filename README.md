@@ -85,8 +85,29 @@ SPEECH_PROVIDER=sarvam
 TTS_PROVIDER=sarvam
 ```
 
-Model IDs (`SARVAM_CHAT_MODEL`, `SARVAM_TRANSLATE_MODEL`, `SARVAM_STT_MODEL`,
-`SARVAM_TTS_MODEL`) are configurable in `.env`.
+Models used (all overridable in `.env`):
+
+| Capability | Model | Endpoint |
+|---|---|---|
+| Reasoning / agentic tool calling (control room) | `sarvam-105b` | `POST /v1/chat/completions` |
+| Conversational voice turns (pilgrim / volunteer) | `sarvam-105b-conversations` | `POST /v1/chat/completions` |
+| Translation (en/hi/mr/ta, `auto` source detection) | `mayura:v1` | `POST /translate` |
+| Speech-to-text (batch) | `saarika:v2.5` | `POST /speech-to-text` |
+| Text-to-speech | `bulbul:v3` | `POST /text-to-speech` |
+
+**Genuine tool calling:** the chat route passes each persona's allowed tools to
+Sarvam as OpenAI-format function schemas (`src/ai/tools/toolSchemas.ts`) with
+`tool_choice: "auto"`. The model emits real `tool_calls`; we map the first one
+into `SetuTurn.tool`. The model only *proposes* — `src/ai/orchestrator.ts` still
+runs registry argument validation, per-persona authorization
+(`toolAllowedForPersona`), the offline policy, and the risk/confirmation gate
+(`needsConfirmation`) before anything executes.
+
+**STT limitation:** speech-to-text uses the **batch REST** path — a short
+`MediaRecorder` clip is posted to `/api/setu/stt`. Realtime streaming STT
+(`saaras:v3-realtime` over WebSocket) is **not** wired in this build; live
+in-field transcription uses the browser Web Speech API, with the Sarvam batch
+call as the no-Web-Speech fallback.
 
 ### How it's wired
 

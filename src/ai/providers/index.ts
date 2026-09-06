@@ -38,8 +38,13 @@ export interface ProviderBundle {
   mode: "live" | "simulation";
 }
 
+// Client wiring: use the Sarvam adapters unless explicitly disabled. Each
+// adapter probes /api/setu/* per call and falls straight back to its Mock*
+// sibling when the server has no key (503) or a call fails — so wiring them in
+// by default is safe even with no credentials. Set NEXT_PUBLIC_SETU_LIVE=0 to
+// force pure-simulation wiring.
 const LIVE =
-  typeof process !== "undefined" && process.env.NEXT_PUBLIC_SETU_LIVE === "1";
+  typeof process === "undefined" || process.env.NEXT_PUBLIC_SETU_LIVE !== "0";
 
 let bundle: ProviderBundle | null = null;
 
