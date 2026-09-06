@@ -163,10 +163,17 @@ export default function ManagementApp() {
             incidents={store.incidents}
             volunteers={store.volunteers}
             facilities={store.facilities}
+            groundReports={store.groundReports}
+            emergingSignals={store.emergingSignals}
             onIncidentClick={(id) => {
               setSelectedIncidentId(id);
               setSelectedZoneId(null);
             }}
+            onViewFieldReports={() => {
+              setView("fieldreports");
+              setSelectedZoneId(null);
+            }}
+            onClose={() => setSelectedZoneId(null)}
           />
         )}
       </Drawer>

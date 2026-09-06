@@ -1261,6 +1261,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       volunteers: clone(VOLUNTEERS),
       incidents: clone(INITIAL_INCIDENTS),
       tasks: [],
+      systemStatus: { mode: "simulation", connectivity: "nominal", lastSyncAt: nowIso() } as SystemStatus,
       riskSnapshots: clone(RISK_SNAPSHOTS),
       riskHistory: Object.fromEntries(ZONES.map((z) => [z.id, [RISK_SNAPSHOTS[z.id]?.score ?? z.riskScore]])),
       resources: clone(RESOURCES),

@@ -184,3 +184,36 @@ export function recomputeZoneRisk(
 export function nextSequentialCode(seq: number): string {
   return `KS-${1000 + seq}`;
 }
+
+/**
+ * Resolve a loose incident reference to a single incident.
+ *
+ * The reasoning model is inconsistent about where it puts the identifier: it
+ * may pass "KS-1003" in the `code` field, in the `incidentId` field, or pass
+ * the internal id "inc-ks-1003", or even just "1003". Incident `id` is
+ * `inc-ks-1003` (lower-case) and `code` is `KS-1003`, so a naive
+ * `i.id === ref || i.code === ref` misses most of these. Pass every candidate
+ * reference (any order) and this matches on a normalised form.
+ */
+export function resolveIncident(
+  incidents: Incident[],
+  ...refs: (string | undefined | null)[]
+): Incident | undefined {
+  const norm = (s: string) =>
+    s.trim().toUpperCase().replace(/\s+/g, "").replace(/^INC[-_]?/, "");
+  for (const raw of refs) {
+    if (typeof raw !== "string" || !raw.trim()) continue;
+    const r = norm(raw);
+    const rDigits = r.replace(/\D/g, "");
+    const hit = incidents.find((i) => {
+      const code = i.code.toUpperCase();
+      const id = i.id.toUpperCase().replace(/^INC[-_]?/, "");
+      if (r === code || r === id) return true;
+      // digit-only fallback ("1003" -> KS-1003), but only for full-length codes
+      if (rDigits.length >= 4 && rDigits === code.replace(/\D/g, "")) return true;
+      return false;
+    });
+    if (hit) return hit;
+  }
+  return undefined;
+}

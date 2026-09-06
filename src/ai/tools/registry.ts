@@ -21,7 +21,7 @@ import type {
 } from "@/lib/types";
 import type { TranslationProvider } from "@/ai/providers/types";
 import { retrieve } from "@/ai/knowledge/kb";
-import { distance } from "@/lib/dispatch";
+import { distance, resolveIncident } from "@/lib/dispatch";
 
 export type RiskClass = "read" | "low_write" | "high_write";
 
@@ -79,6 +79,12 @@ const num = (v: unknown): number | undefined => {
   return Number.isFinite(n) ? n : undefined;
 };
 const isVolunteer = (ctx: ToolContext) => ctx.actor.role === "volunteer" || ctx.actor.role === "management";
+
+/** "V233" / "v-233" / "V 233" -> "V-233"; anything not volunteer-id shaped -> undefined. */
+const normVolId = (v: unknown): string | undefined => {
+  const m = (typeof v === "string" ? v : "").toUpperCase().match(/V[-\s]?(\d{2,4})/);
+  return m ? `V-${m[1]}` : undefined;
+};
 
 const FACILITY_TYPES: FacilityType[] = ["medical", "water", "toilet", "food", "parking", "help_desk"];
 const INCIDENT_TYPES: IncidentType[] = ["medical", "lost_person", "crowd_pressure", "security", "facility", "other"];
@@ -270,9 +276,7 @@ export const TOOLS: ToolDef[] = [
       return { ok: has, errors: has ? [] : ["provide incidentId or code"], value: { incidentId: str(a.incidentId), code: str(a.code) } };
     },
     run: async (a, ctx) => {
-      const id = a.incidentId as string | undefined;
-      const code = (a.code as string | undefined)?.toUpperCase();
-      const inc = ctx.store.incidents.find((i) => i.id === id || i.code.toUpperCase() === code);
+      const inc = resolveIncident(ctx.store.incidents, a.incidentId as string, a.code as string);
       if (!inc) return { ok: false, summary: "No incident matches that.", error: "not_found" };
       const ageMin = Math.round((Date.now() - new Date(inc.createdAt).getTime()) / 60000);
       return {
@@ -540,9 +544,7 @@ export const TOOLS: ToolDef[] = [
       return { ok: has, errors: has ? [] : ["provide incidentId or code"], value: { incidentId: str(a.incidentId), code: str(a.code) } };
     },
     run: async (a, ctx) => {
-      const inc = ctx.store.incidents.find(
-        (i) => i.id === a.incidentId || i.code.toUpperCase() === (a.code as string | undefined)?.toUpperCase()
-      );
+      const inc = resolveIncident(ctx.store.incidents, a.incidentId as string, a.code as string);
       if (!inc) return { ok: false, summary: "No incident matches that.", error: "not_found" };
       const task = ctx.store.tasks.find(
         (t) => t.incidentId === inc.id && !["resolved", "escalated", "cancelled"].includes(t.state)
@@ -564,17 +566,37 @@ export const TOOLS: ToolDef[] = [
     name: "assign_volunteer",
     riskClass: "high_write",
     authorize: (ctx) => isVolunteer(ctx),
-    describe: (a) => `Dispatch a volunteer to ${str(a.code) ?? str(a.incidentId) ?? "the incident"}`,
+    describe: (a, ctx) => {
+      const inc = resolveIncident(ctx.store.incidents, a.incidentId as string, a.code as string);
+      const v = normVolId(a.volunteerId);
+      return v
+        ? `Dispatch ${v} to ${inc?.code ?? "the incident"}`
+        : `Dispatch the nearest skill- and language-matched responder to ${inc?.code ?? "the incident"}`;
+    },
     validate: (a) => {
       const has = Boolean(str(a.incidentId) || str(a.code));
-      return { ok: has, errors: has ? [] : ["provide incidentId or code"], value: { incidentId: str(a.incidentId), code: str(a.code) } };
+      return {
+        ok: has,
+        errors: has ? [] : ["provide incidentId or code"],
+        value: { incidentId: str(a.incidentId), code: str(a.code), volunteerId: normVolId(a.volunteerId) },
+      };
     },
     run: async (a, ctx) => {
-      const inc = ctx.store.incidents.find(
-        (i) => i.id === a.incidentId || i.code.toUpperCase() === (a.code as string | undefined)?.toUpperCase()
-      );
+      const inc = resolveIncident(ctx.store.incidents, a.incidentId as string, a.code as string);
       if (!inc) return { ok: false, summary: "No incident matches that.", error: "not_found" };
-      ctx.store.dispatchIncident(inc.id);
+      // If the operator named a specific available volunteer, force that one by
+      // excluding every other available responder; otherwise auto-match.
+      let exclude: string[] = [];
+      const wanted = a.volunteerId as string | undefined;
+      if (wanted) {
+        const v = ctx.store.volunteers.find((vv) => vv.id.toUpperCase() === wanted.toUpperCase());
+        if (v && v.availability === "available") {
+          exclude = ctx.store.volunteers
+            .filter((vv) => vv.id !== v.id && vv.availability === "available")
+            .map((vv) => vv.id);
+        }
+      }
+      ctx.store.dispatchIncident(inc.id, exclude);
       const assigned = ctx.getStore().incidents.find((i) => i.id === inc.id)?.assignedVolunteerId;
       return {
         ok: true,

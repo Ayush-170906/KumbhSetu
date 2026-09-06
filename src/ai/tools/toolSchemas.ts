@@ -108,10 +108,15 @@ const SCHEMAS: Record<string, OpenAIToolSchema> = {
     code: { type: "string" },
     incidentId: { type: "string" },
   }),
-  assign_volunteer: S("assign_volunteer", "Dispatch a volunteer to an incident. HIGH RISK — requires confirmation.", {
-    incidentId: { type: "string" },
-    code: { type: "string" },
-  }),
+  assign_volunteer: S(
+    "assign_volunteer",
+    "Dispatch a responder to an incident. Put the incident code in `code` (e.g. KS-1003) and, if the operator named a specific volunteer, put that in `volunteerId` (e.g. V-233). HIGH RISK — requires confirmation.",
+    {
+      incidentId: { type: "string", description: "incident code or id, e.g. KS-1003" },
+      code: { type: "string", description: "incident code, e.g. KS-1003" },
+      volunteerId: { type: "string", description: "specific volunteer to send, e.g. V-233 (optional)" },
+    }
+  ),
   publish_advisory: S(
     "publish_advisory",
     "Publish an advisory to pilgrim phones. HIGH RISK — requires confirmation.",

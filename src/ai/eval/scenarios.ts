@@ -254,6 +254,19 @@ export const SCENARIOS: Scenario[] = [
     expectTool: "create_ground_report",
     expectConfirm: true,
   },
+  {
+    // P0: natural field-worker phrasing must classify as a ground report.
+    id: "gr-natural-have-report",
+    group: "ground_report",
+    message: "I also have a report — a lost boy about 6 near Ramkund, someone found a child crying by Gate 3",
+    expectIntent: "ground_report",
+  },
+  {
+    id: "gr-natural-log-this",
+    group: "ground_report",
+    message: "log this as a report: the water point at Gate 4 is dry and a queue is forming",
+    expectIntent: "ground_report",
+  },
 
   // --- ambiguous ---
   // "she can't walk" with no prior context reads as an accessibility need; in a

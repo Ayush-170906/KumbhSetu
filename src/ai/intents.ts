@@ -68,11 +68,16 @@ const RULES: IntentRule[] = [
   },
   {
     intent: "ground_report",
-    weight: 8,
+    weight: 9,
     patterns: [
       /\b(report|log|flag|raise)\b.*\b(issue|problem|shortage|broken|damaged|overflow|blocked|leak|outage|not arrived|not working|missing|spill)\b/i,
       /\b(there is|there'?s|i see|i found|noticed|spotted)\b.*\b(no water|water shortage|overflowing|broken|damaged|barricade|blocked|garbage|no lights?|leak)\b/i,
       /\breport (a|an|the)\b/i,
+      // natural field-worker phrasing — "I (also) have a report", "reporting:", "log this as a report"
+      /\bi(?:'| a)?m? (also )?(have|got|filing|submitting|raising|logging|making)\s+(a|an|another|one more|this)?\s*(report|observation|sighting|update)\b/i,
+      /\bi (also )?have (a|an|another|one more) report\b/i,
+      /\b(reporting|to report|another report)\b\s*[:—-]/i,
+      /\b(log|file|submit|record|note down|add)\s+(this|that|the following|it)?\s*(as )?(a |an )?(report|ground report|observation)\b/i,
       /\b(no water|water shortage|out of water|ran out of|overflow(ing)?|sewage|garbage piling|blocked (path|route|exit)|broken (tap|pipe|barricade|light|gate)|not working|leaking)\b/i,
       /\b(tanker|supply|delivery|bins?|toilets?|lights?)\b.*\b(has ?n'?t|have ?n'?t|not)\s+(arrived|come|been|refilled|cleared|working|fixed)\b/i,
       /\b(people|pilgrims|crowd)\b.*\b(waiting|stuck|stranded)\b/i,

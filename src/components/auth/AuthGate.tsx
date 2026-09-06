@@ -59,11 +59,11 @@ export function AuthGate({ area, children }: { area: DemoRole; children: React.R
             <button
               onClick={() => {
                 logout();
-                router.replace(`/login?next=${area}`);
+                router.replace("/");
               }}
               className="block w-full rounded-sm border border-border-strong text-ink text-sm py-2.5 hover:bg-surface-muted transition-colors"
             >
-              Sign out &amp; switch
+              Sign out
             </button>
           </div>
         </div>
@@ -89,7 +89,7 @@ function SessionChip({ session }: { session: DemoSession }) {
       <button
         onClick={() => {
           logout();
-          router.replace("/login");
+          router.replace("/");
         }}
         className="flex items-center gap-1 hover:text-ink"
         title="Sign out"

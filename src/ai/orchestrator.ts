@@ -29,10 +29,12 @@ import {
   executeTool,
   needsConfirmation,
   riskClassOf,
+  TOOL_BY_NAME,
   type ToolContext,
   type ToolResult,
   type RiskClass,
 } from "@/ai/tools";
+import type { ReportSeverity } from "@/lib/types";
 
 export interface TurnInput {
   message: string;
@@ -138,6 +140,54 @@ function operationalSummary(ctx: ToolContext, persona: SetuPersona = "volunteer"
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+/**
+ * P0: deterministic field-report extraction. When the message clearly reads as
+ * a field report ("I also have a report — …", "log this as a report", …) but
+ * the model routed elsewhere, we build a create_ground_report call ourselves so
+ * natural field-worker phrasing always produces a report draft (which the
+ * volunteer then confirms).
+ */
+function draftGroundReportArgs(message: string): {
+  category: GroundReportCategory;
+  summary: string;
+  severity: ReportSeverity;
+} {
+  const m = message.toLowerCase();
+  const category: GroundReportCategory =
+    /\b(lost|missing|separated)\b.{0,24}\b(child|boy|girl|kid|son|daughter|person|man|woman|elderly|mother|father|parent)\b|\b(lost|missing)\s+(child|person|kid)\b/.test(m)
+      ? "lost_person"
+      : /\b(no water|water shortage|drinking water|tanker|out of water|thirsty|tap)\b/.test(m)
+      ? "water"
+      : /\b(toilet|sanitation|sewage|latrine|urinal)\b/.test(m)
+      ? "toilet"
+      : /\b(medical|unwell|injured|faint|collaps|bleeding|heat ?stroke|unconscious|ambulance|sick|dizzy)\b/.test(m)
+      ? "medical"
+      : /\b(crowd|crush|surge|stampede|bottleneck|pushing|pressure|packed|congest)\b/.test(m)
+      ? "crowd"
+      : /\b(barricade|barrier|fence|gate|structure|pole|scaffold|collaps|broken|damage|hazard)\b/.test(m)
+      ? "infrastructure"
+      : /\b(food|langar|annakshetra|meal|hungry|prasad)\b/.test(m)
+      ? "food"
+      : /\b(fire|smoke|weapon|fight|theft|stolen|suspicious|unattended bag)\b/.test(m)
+      ? "safety"
+      : /\b(wheelchair|ramp|divyang|elderly access|mobility)\b/.test(m)
+      ? "accessibility"
+      : "other";
+  const severity: ReportSeverity =
+    /\b(critical|urgent|emergency|serious|immediately|right now|stampede|crush|collaps|unconscious|bleeding|missing|lost (child|boy|girl|kid)|child.*lost)\b/.test(m)
+      ? "high"
+      : /\b(minor|small|slight|not urgent|low priority)\b/.test(m)
+      ? "low"
+      : "moderate";
+  const summary =
+    message
+      .trim()
+      .replace(/^\s*(i(?:'| a)?m?\s+(also\s+)?(have|got|filing|submitting|raising|logging|making)\s+(a|an|another|one more|this)?\s*(report|observation|sighting|update)\b[\s:—,-]*)/i, "")
+      .replace(/^\s*(reporting|to report)\b[\s:—,-]*/i, "")
+      .trim() || message.trim();
+  return { category, summary: summary.slice(0, 220), severity };
 }
 
 function buildContext(
@@ -287,6 +337,28 @@ export async function runTurn(input: TurnInput): Promise<TurnResult> {
     turn = { ...turn, tool: undefined, requiresConfirmation: false, confirmationPrompt: undefined };
   }
 
+  // P0: natural "I (also) have a report — …" phrasing must always produce a
+  // ground-report draft, even if the model answered with guidance instead.
+  if (
+    preIntent === "ground_report" &&
+    (input.persona === "volunteer" || input.persona === "management") &&
+    toolAllowedForPersona(input.persona, "create_ground_report") &&
+    turn.tool?.name !== "create_ground_report" &&
+    !turn.reportDraft &&
+    !input.memory.snapshot().translationPair
+  ) {
+    const args = draftGroundReportArgs(input.message);
+    turn = {
+      ...turn,
+      intent: "ground_report",
+      tool: { name: "create_ground_report" as never, arguments: args },
+      requiresConfirmation: false,
+      reply: turn.tool
+        ? { [input.volunteerLanguage]: "Got it — drafting that as a field report.", en: "Got it — drafting that as a field report." }
+        : turn.reply,
+    };
+  }
+
   applyMemoryEffects(turn, input);
 
   const lead = pickLang(turn.reply, input.volunteerLanguage);
@@ -332,7 +404,10 @@ export async function runTurn(input: TurnInput): Promise<TurnResult> {
 
   const mustConfirm = turn.requiresConfirmation || needsConfirmation(turn.tool.name);
   if (mustConfirm) {
-    const prompt = turn.confirmationPrompt ?? "Confirm this action?";
+    // Say exactly what will happen (P1). Prefer the model's own phrasing, else
+    // the tool's own describe() over the concrete arguments.
+    const described = TOOL_BY_NAME[turn.tool.name]?.describe(turn.tool.arguments, ctx);
+    const prompt = turn.confirmationPrompt ?? (described ? `${described}?` : "Confirm this action?");
     return {
       turn,
       intent: turn.intent,

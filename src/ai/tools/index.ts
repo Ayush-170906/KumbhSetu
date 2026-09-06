@@ -66,9 +66,13 @@ export async function executeTool(
   return result;
 }
 
+// Low-risk writes we still surface a confirm card for, so nothing reaches the
+// control room without the volunteer tapping "Submit" (P1).
+const ALWAYS_CONFIRM = new Set(["create_ground_report", "report_resource_issue"]);
+
 /** Whether a proposed tool call needs the confirm card before it can run. */
 export function needsConfirmation(name: string): boolean {
-  return TOOL_BY_NAME[name]?.riskClass === "high_write";
+  return TOOL_BY_NAME[name]?.riskClass === "high_write" || ALWAYS_CONFIRM.has(name);
 }
 
 export function riskClassOf(name: string): RiskClass | undefined {
