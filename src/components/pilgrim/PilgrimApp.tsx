@@ -10,7 +10,7 @@ import { FacilitiesScreen } from "./FacilitiesScreen";
 import { LostFoundScreen } from "./LostFoundScreen";
 import { SetuCompanion } from "@/components/setu/SetuCompanion";
 import { ReportIssueScreen } from "./ReportIssueScreen";
-import { StubScreen } from "./StubScreen";
+import { PlanScreen } from "./PlanScreen";
 import { Icon } from "@/components/ui/Icon";
 
 export type PilgrimScreen =
@@ -19,7 +19,7 @@ export type PilgrimScreen =
   | "facilities"
   | "lost-found"
   | "assistant"
-  | "route"
+  | "plan"
   | "report-issue";
 
 const titles: Record<PilgrimScreen, string> = {
@@ -28,7 +28,7 @@ const titles: Record<PilgrimScreen, string> = {
   facilities: "Facilities Near You",
   "lost-found": "Lost & Found",
   assistant: "Ask Kumbh Setu",
-  route: "My Route",
+  plan: "Plan my Kumbh",
   "report-issue": "Report an Issue",
 };
 
@@ -90,13 +90,7 @@ export default function PilgrimApp() {
           onNavHint={(s) => setScreen(s as PilgrimScreen)}
         />
       )}
-      {screen === "route" && (
-        <StubScreen
-          icon="route"
-          title="Route guidance"
-          body="Turn-by-turn routing between ghats, parking and your registered accommodation is planned for a later build once real path/accessibility data is available."
-        />
-      )}
+      {screen === "plan" && <PlanScreen language={store.language} />}
       {screen === "report-issue" && <ReportIssueScreen zone={zone} onClose={() => setScreen("home")} />}
 
       {store.systemStatus.connectivity !== "nominal" && screen === "home" && (

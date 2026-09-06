@@ -27,6 +27,7 @@ const dict = {
   sos: { en: "SOS", hi: "एसओएस", mr: "एसओएस" },
   findFacility: { en: "Find Facility", hi: "सुविधा खोजें", mr: "सुविधा शोधा" },
   myRoute: { en: "My Route", hi: "मेरा मार्ग", mr: "माझा मार्ग" },
+  planKumbh: { en: "Plan my Kumbh", hi: "मेरा कुंभ प्लान करें", mr: "माझा कुंभ आखा" },
   lostFound: { en: "Lost & Found", hi: "खोया-पाया", mr: "हरवले-सापडले" },
   darshan: { en: "Darshan", hi: "दर्शन", mr: "दर्शन" },
   reportIssue: { en: "Report Issue", hi: "समस्या दर्ज करें", mr: "समस्या नोंदवा" },

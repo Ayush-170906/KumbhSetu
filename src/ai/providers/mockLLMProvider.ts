@@ -353,6 +353,22 @@ export class MockLLMProvider implements AIProvider {
       };
     }
 
+    if (/\b(plan (my|our|the) (kumbh|trip|visit|yatra|mela|days|snan)|help me plan|make (me )?a plan|my itinerary|plan for (my|our) (visit|trip|days))\b/i.test(text)) {
+      return {
+        ...this.base("religious_information", "routine"),
+        reply: reply(
+          lang,
+          L(
+            "I can build a day-by-day plan — which ghat and when, your route, and a checklist for your group. Tell me your dates and who's travelling on the planner.",
+            "मैं दिन-प्रतिदिन की योजना बना सकता हूँ — कौन सा घाट और कब, आपका मार्ग, और आपके समूह के लिए चेकलिस्ट। योजनाकार पर अपनी तिथियाँ बताएँ।",
+            "मी दिवसनिहाय योजना तयार करू शकतो — कोणता घाट आणि केव्हा, तुमचा मार्ग, आणि तुमच्या गटासाठी चेकलिस्ट. नियोजकावर तुमच्या तारखा सांगा.",
+            "நான் நாள்வாரி திட்டம் உருவாக்க முடியும் — எந்த படித்துறை, எப்போது, உங்கள் பாதை, மற்றும் உங்கள் குழுவிற்கான சரிபார்ப்புப் பட்டியல்."
+          )
+        ),
+        navHint: { screen: "plan", label: "Open the planner" },
+      };
+    }
+
     if (intent === "lost_person") {
       const kb = req.context.knowledge.find((k) => k.id === "kb-lost-found-pilgrim" || k.id === "kb-children-safety");
       return {
