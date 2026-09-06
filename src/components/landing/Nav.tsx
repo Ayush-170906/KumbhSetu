@@ -20,11 +20,15 @@ export function Nav() {
           <Link href="/pilgrim" className="hover:text-ink transition-colors">Pilgrim</Link>
           <Link href="/volunteer" className="hover:text-ink transition-colors">Volunteer</Link>
           <Link href="/management" className="hover:text-ink transition-colors">Management</Link>
+          <Link href="/enroll" className="hover:text-ink transition-colors">Volunteer sign-up</Link>
         </nav>
 
         <div className="flex items-center gap-2">
+          <Link href="/enroll" className="hidden sm:block">
+            <Button size="sm" variant="outline">Register as a volunteer</Button>
+          </Link>
           <Link href="/login">
-            <Button size="sm" variant="outline">Sign in</Button>
+            <Button size="sm" variant="ghost">Sign in</Button>
           </Link>
           <Link href="/demo">
             <Button size="sm">Run Live Demo</Button>

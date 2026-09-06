@@ -135,13 +135,21 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-xs text-ink-muted mt-4">
-            New volunteer?{" "}
-            <Link href="/enroll" className="text-primary hover:text-primary-dark font-medium">
-              Enroll here
-            </Link>{" "}
-            — add your details and availability.
-          </p>
+          <Link
+            href="/enroll"
+            className="mt-4 flex items-center justify-between gap-3 rounded-sm border border-primary/40 bg-primary-soft/40 px-3 py-3 hover:bg-primary-soft transition-colors group"
+          >
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-ink">New volunteer? Register here</span>
+              <span className="block text-[11px] text-ink-muted mt-0.5">
+                Add your details, set when you can serve, get the group link.
+              </span>
+            </span>
+            <Icon
+              name="arrow-right"
+              className="h-4 w-4 text-primary group-hover:text-primary-dark shrink-0"
+            />
+          </Link>
 
           <p className="text-[10px] text-ink-soft mt-3 leading-relaxed">
             Prototype sign-in only — no real accounts, no server. All demo passwords are{" "}

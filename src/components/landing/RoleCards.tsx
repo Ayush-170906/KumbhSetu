@@ -72,6 +72,22 @@ export function RoleCards() {
           </Link>
         ))}
       </div>
+
+      <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-border bg-primary-soft/40 rounded-sm px-5 py-4">
+        <div>
+          <div className="text-sm font-semibold text-ink">Want to serve on the ground?</div>
+          <p className="text-xs text-ink-muted mt-0.5">
+            Register as a volunteer, set when you can serve, and get the group link to stay in the loop.
+          </p>
+        </div>
+        <Link
+          href="/enroll"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-sm bg-primary text-white text-xs font-medium px-4 py-2.5 hover:bg-primary-dark transition-colors"
+        >
+          Register as a volunteer
+          <Icon name="arrow-right" className="h-3.5 w-3.5" />
+        </Link>
+      </div>
     </Section>
   );
 }

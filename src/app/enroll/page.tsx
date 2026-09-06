@@ -11,6 +11,7 @@ import { ClientOnly } from "@/components/ui/ClientOnly";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { SimTag } from "@/components/ui/SimTag";
+import { VolunteerJoinCard } from "@/components/volunteer/VolunteerJoinCard";
 
 const SKILLS = [
   { id: "first_aid", label: "First aid" },
@@ -67,18 +68,20 @@ function EnrollInner() {
   if (done) {
     return (
       <Shell>
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
-          <div className="h-14 w-14 rounded-full bg-status-green-bg flex items-center justify-center mb-4">
+        <div className="flex-1 overflow-y-auto scroll-thin flex flex-col items-center text-center p-6 gap-3">
+          <div className="h-14 w-14 rounded-full bg-status-green-bg flex items-center justify-center">
             <Icon name="check" className="h-6 w-6 text-status-green" />
           </div>
-          <h1 className="text-lg font-semibold text-ink">You&rsquo;re enrolled</h1>
-          <p className="font-mono-num text-sm text-ink-muted mt-1">{done.id}</p>
-          <p className="text-xs text-ink-muted mt-3 max-w-xs">
-            Your details are now with the control room. On shift, open the field app and pick your ID from the
-            switcher.
+          <h1 className="text-lg font-semibold text-ink">You&rsquo;re registered as a volunteer</h1>
+          <p className="text-xs text-ink-muted -mt-1">
+            Your volunteer ID is <span className="font-mono-num text-ink">{done.id}</span> — the
+            control room can see you on the roster now.
           </p>
+
+          <VolunteerJoinCard volunteerId={done.id} />
+
           <Button
-            className="mt-6"
+            className="mt-1"
             onClick={() => {
               login("volunteer", "kumbh2027");
               router.replace("/field");
@@ -86,7 +89,7 @@ function EnrollInner() {
           >
             Open the field app
           </Button>
-          <Link href="/" className="text-xs text-ink-soft hover:text-ink mt-3">
+          <Link href="/" className="text-xs text-ink-soft hover:text-ink">
             Back to home
           </Link>
         </div>
@@ -99,8 +102,8 @@ function EnrollInner() {
       <div className="flex-1 overflow-y-auto scroll-thin p-4 space-y-4 pb-8">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h1 className="text-base font-semibold text-ink">Enroll as a volunteer</h1>
-            <p className="text-xs text-ink-muted mt-0.5">Add your details and when you can serve. The control room sees this on the roster.</p>
+            <h1 className="text-base font-semibold text-ink">Register as a volunteer</h1>
+            <p className="text-xs text-ink-muted mt-0.5">Add your details and when you can serve. The control room sees this on the roster, and you&rsquo;ll get the volunteer group link right after.</p>
           </div>
           <SimTag label="DEMO" />
         </div>
@@ -194,7 +197,7 @@ function EnrollInner() {
         </Field>
 
         <Button className="w-full" size="lg" disabled={!valid} onClick={submit}>
-          Enroll
+          Register as a volunteer
         </Button>
       </div>
     </Shell>
@@ -218,7 +221,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <Link href="/login" className="p-1 -ml-1 text-ink-muted" aria-label="Back">
             <Icon name="chevron-right" className="h-5 w-5 rotate-180" />
           </Link>
-          <div className="text-sm font-semibold text-ink">Volunteer enrollment</div>
+          <div className="text-sm font-semibold text-ink">Volunteer registration</div>
         </header>
         {children}
       </div>
