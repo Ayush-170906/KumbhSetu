@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useRef, type ReactNode } from "react";
 import type { LanguageCode } from "@/lib/types";
 import { LANGUAGE_LABELS } from "@/lib/i18n";
 import { Icon } from "@/components/ui/Icon";
@@ -50,9 +50,12 @@ export function SetuCompanion({
     voiceReplies,
     voiceInputAvailable,
     voiceOutputAvailable,
+    voiceBlocked,
     lastError,
     providerInfo,
   } = setu;
+
+  const composerRef = useRef<HTMLInputElement>(null);
 
   const lastSetu = [...messages].reverse().find((m) => m.role === "setu");
   const emergency = lastSetu?.urgency === "emergency";
@@ -65,9 +68,11 @@ export function SetuCompanion({
   }, [reportDraft]);
 
   function toggleListen() {
-    if (status === "listening") setu.stopListening();
-    else if (status === "speaking") setu.stopSpeaking();
-    else setu.startListening();
+    if (status === "listening") return setu.stopListening();
+    if (status === "speaking") return setu.stopSpeaking();
+    // No usable mic — don't error; just put the cursor in the text box.
+    if (!voiceInputAvailable) return composerRef.current?.focus();
+    setu.startListening();
   }
 
   // ---- translation mode takes over the body -----------------------------
@@ -145,14 +150,29 @@ export function SetuCompanion({
             <div className="text-[12px] font-semibold uppercase tracking-[0.16em] text-ink">Kumbh Setu AI</div>
             <div className="text-xs text-ink-muted mt-0.5">Voice-first field companion</div>
           </div>
-          <SetuOrb status={status} emergency={emergency} onPress={toggleListen} size={variant === "full" ? 148 : 120} />
+          <SetuOrb
+            status={status}
+            emergency={emergency}
+            voiceAvailable={voiceInputAvailable}
+            onPress={toggleListen}
+            size={variant === "full" ? 148 : 120}
+          />
           {partial && (
             <div className="text-sm text-ink-muted italic text-center max-w-xs">&ldquo;{partial}&rdquo;</div>
           )}
-          {lastError && <div className="text-xs text-status-red text-center">{lastError}</div>}
-          {!voiceInputAvailable && (
+          {lastError && <div className="text-xs text-status-amber text-center max-w-xs">{lastError}</div>}
+          {!voiceInputAvailable && !lastError && (
             <div className="text-[11px] text-ink-soft text-center max-w-xs">
-              Voice input isn&rsquo;t available on this device — use the box below. Everything else works.
+              {voiceBlocked ? (
+                <>
+                  Using text — the mic isn&rsquo;t available here.{" "}
+                  <button onClick={setu.retryVoice} className="underline hover:text-ink">
+                    Try the mic again
+                  </button>
+                </>
+              ) : (
+                <>Type your question below, or tap the camera. Everything works without voice.</>
+              )}
             </div>
           )}
           {emptyStateExtra && <div className="w-full max-w-md">{emptyStateExtra}</div>}
@@ -186,9 +206,15 @@ export function SetuCompanion({
               onCancel={setu.cancel}
             />
           )}
-          {lastError && <div className="px-4 pb-1 text-xs text-status-red">{lastError}</div>}
+          {lastError && <div className="px-4 pb-1 text-xs text-status-amber">{lastError}</div>}
           <div className="flex items-center justify-center gap-4 py-2 border-t border-border bg-surface">
-            <SetuOrb status={status} emergency={emergency} onPress={toggleListen} size={82} />
+            <SetuOrb
+              status={status}
+              emergency={emergency}
+              voiceAvailable={voiceInputAvailable}
+              onPress={toggleListen}
+              size={82}
+            />
           </div>
         </>
       )}
@@ -203,6 +229,7 @@ export function SetuCompanion({
         }
         onSend={setu.sendText}
         onPhoto={setu.sendPhoto}
+        inputRef={composerRef}
       />
     </div>
   );

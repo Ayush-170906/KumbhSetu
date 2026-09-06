@@ -74,9 +74,21 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
   const [translationOther, setTranslationOther] = useState<LanguageCode | null>(null);
   const [voiceReplies, setVoiceReplies] = useState(true);
   const [lastError, setLastError] = useState<string | null>(null);
+  /** Set once the device speech API is present but unusable (mic blocked, no
+   *  mic, or the recognition service is unreachable). Flips the companion to
+   *  text-first for the rest of the session so the orb never errors on tap. */
+  const [voiceBlocked, setVoiceBlocked] = useState(false);
+  const networkFailsRef = useRef(0);
 
-  const voiceInputAvailable = providers.speech.isRecognitionAvailable();
+  const voiceInputAvailable = providers.speech.isRecognitionAvailable() && !voiceBlocked;
   const voiceOutputAvailable = providers.speech.isSpeechAvailable();
+
+  // Field errors shouldn't sit on screen — clear them after a few seconds.
+  useEffect(() => {
+    if (!lastError) return;
+    const t = setTimeout(() => setLastError(null), 6000);
+    return () => clearTimeout(t);
+  }, [lastError]);
 
   useEffect(() => {
     return () => {
@@ -223,6 +235,10 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
 
   const startListening = useCallback(() => {
     if (status === "listening") return;
+    if (!providers.speech.isRecognitionAvailable() || voiceBlocked) {
+      setLastError("Voice input isn't available here — type your message below.");
+      return;
+    }
     setLastError(null);
     setPartial("");
     providers.speech.cancelSpeech();
@@ -240,12 +256,26 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
           listenRef.current = null;
           setPartial("");
           setStatus("idle");
-          if (reason === "unavailable") {
-            setLastError("Voice input isn't available on this device — type instead.");
-          } else if (reason === "no-speech") {
-            setLastError("I didn't hear anything. Tap and try again.");
-          } else if (reason !== "aborted") {
-            setLastError("Speech recognition had a problem — type instead.");
+          if (reason === "aborted") return;
+          if (reason === "no-speech") {
+            // Harmless — user tapped and said nothing. Soft, self-clearing hint.
+            setLastError("I didn't catch anything — tap the mic and try again, or type below.");
+          } else if (reason === "not-allowed" || reason === "service-not-allowed") {
+            setVoiceBlocked(true);
+            setLastError("Microphone is blocked — I'll use text. Re-enable it in your browser's site settings if you want voice.");
+          } else if (reason === "audio-capture") {
+            setVoiceBlocked(true);
+            setLastError("No microphone found — using text instead.");
+          } else if (reason === "network" || reason === "unavailable") {
+            networkFailsRef.current += 1;
+            if (networkFailsRef.current >= 2) {
+              setVoiceBlocked(true);
+              setLastError("Voice recognition isn't reachable here — switched to text.");
+            } else {
+              setLastError("Voice service didn't respond — type instead, or try the mic again.");
+            }
+          } else {
+            setLastError("Voice had a problem — type your message below.");
           }
         },
         onEnd: () => {
@@ -254,7 +284,14 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
         },
       }
     );
-  }, [providers, status, volunteerLanguage, translationOther, handleUserMessage]);
+  }, [providers, status, volunteerLanguage, translationOther, handleUserMessage, voiceBlocked]);
+
+  /** Let the volunteer re-try voice after a block (e.g. they just granted the mic). */
+  const retryVoice = useCallback(() => {
+    networkFailsRef.current = 0;
+    setVoiceBlocked(false);
+    setLastError(null);
+  }, []);
 
   const stopListening = useCallback(() => {
     listenRef.current?.stop();
@@ -410,6 +447,7 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
     voiceReplies,
     voiceInputAvailable,
     voiceOutputAvailable,
+    voiceBlocked,
     lastError,
     providerInfo: {
       llm: providers.llm.info,
@@ -423,6 +461,7 @@ export function useSetu({ volunteerId, onCreated }: UseSetuOptions) {
     setVoiceReplies,
     startListening,
     stopListening,
+    retryVoice,
     sendText,
     sendPhoto,
     confirm,

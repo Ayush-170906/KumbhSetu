@@ -22,15 +22,21 @@ const BUSY: SetuStatus[] = ["thinking", "searching", "taking_action"];
 export function SetuOrb({
   status,
   emergency,
+  voiceAvailable = true,
   onPress,
   size = 132,
 }: {
   status: SetuStatus;
   emergency?: boolean;
+  /** When false, the orb is a "focus the text box" affordance, not a mic. */
+  voiceAvailable?: boolean;
   onPress: () => void;
   size?: number;
 }) {
-  const copy = STATE_COPY[status];
+  const copy =
+    status === "idle" && !voiceAvailable
+      ? { label: "Type to ask", hint: "Tap here or the box below — voice isn't available" }
+      : STATE_COPY[status];
   const ringing = ACTIVE_RING.includes(status);
   const busy = BUSY.includes(status);
 
@@ -85,6 +91,8 @@ export function SetuOrb({
                   ? "layers"
                   : status === "waiting_for_confirmation"
                   ? "check"
+                  : status === "idle" && !voiceAvailable
+                  ? "log"
                   : "pilgrim"
               }
               className="h-8 w-8"

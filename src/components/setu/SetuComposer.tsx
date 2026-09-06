@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type RefObject } from "react";
 import { Icon } from "@/components/ui/Icon";
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -25,6 +25,7 @@ export function SetuComposer({
   onSend,
   onChip,
   onPhoto,
+  inputRef,
 }: {
   disabled?: boolean;
   placeholder?: string;
@@ -33,6 +34,8 @@ export function SetuComposer({
   onChip?: (text: string) => void;
   /** Camera / gallery image, with whatever the volunteer had typed as the note. */
   onPhoto?: (dataUrl: string, note: string) => void;
+  /** So the parent can focus the field (e.g. when voice is unavailable). */
+  inputRef?: RefObject<HTMLInputElement | null>;
 }) {
   const [text, setText] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
@@ -93,6 +96,7 @@ export function SetuComposer({
           </>
         )}
         <input
+          ref={inputRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={placeholder}
