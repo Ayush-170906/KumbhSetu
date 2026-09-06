@@ -1,4 +1,5 @@
 import { ClientOnly } from "@/components/ui/ClientOnly";
+import { AuthGate } from "@/components/auth/AuthGate";
 import ManagementApp from "@/components/management/ManagementApp";
 
 export default function ManagementPage() {
@@ -10,7 +11,9 @@ export default function ManagementPage() {
         </div>
       }
     >
-      <ManagementApp />
+      <AuthGate area="management">
+        <ManagementApp />
+      </AuthGate>
     </ClientOnly>
   );
 }

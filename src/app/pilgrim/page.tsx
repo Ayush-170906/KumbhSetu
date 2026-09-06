@@ -1,4 +1,5 @@
 import { ClientOnly } from "@/components/ui/ClientOnly";
+import { AuthGate } from "@/components/auth/AuthGate";
 import PilgrimApp from "@/components/pilgrim/PilgrimApp";
 
 export default function PilgrimPage() {
@@ -10,7 +11,9 @@ export default function PilgrimPage() {
         </div>
       }
     >
-      <PilgrimApp />
+      <AuthGate area="pilgrim">
+        <PilgrimApp />
+      </AuthGate>
     </ClientOnly>
   );
 }

@@ -22,9 +22,14 @@ export function Nav() {
           <Link href="/management" className="hover:text-ink transition-colors">Management</Link>
         </nav>
 
-        <Link href="/demo">
-          <Button size="sm">Run Live Demo</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/login">
+            <Button size="sm" variant="outline">Sign in</Button>
+          </Link>
+          <Link href="/demo">
+            <Button size="sm">Run Live Demo</Button>
+          </Link>
+        </div>
       </div>
     </header>
   );

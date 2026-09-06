@@ -1,4 +1,5 @@
 import { ClientOnly } from "@/components/ui/ClientOnly";
+import { AuthGate } from "@/components/auth/AuthGate";
 import VolunteerApp from "@/components/volunteer/VolunteerApp";
 
 export default function VolunteerPage() {
@@ -10,7 +11,9 @@ export default function VolunteerPage() {
         </div>
       }
     >
-      <VolunteerApp />
+      <AuthGate area="volunteer">
+        <VolunteerApp />
+      </AuthGate>
     </ClientOnly>
   );
 }

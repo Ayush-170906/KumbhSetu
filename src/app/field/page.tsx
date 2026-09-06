@@ -1,4 +1,5 @@
 import { ClientOnly } from "@/components/ui/ClientOnly";
+import { AuthGate } from "@/components/auth/AuthGate";
 import { FieldHome } from "@/components/setu/FieldHome";
 
 export const metadata = {
@@ -16,7 +17,9 @@ export default function FieldPage() {
         </div>
       }
     >
-      <FieldHome />
+      <AuthGate area="volunteer">
+        <FieldHome />
+      </AuthGate>
     </ClientOnly>
   );
 }
