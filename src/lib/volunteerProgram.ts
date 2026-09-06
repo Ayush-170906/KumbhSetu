@@ -8,7 +8,7 @@
  *   open a real group.
  */
 export const VOLUNTEER_WHATSAPP_INVITE =
-  "https://chat.whatsapp.com/REPLACE_WITH_REAL_INVITE_CODE";
+  "https://chat.whatsapp.com/LEOh9x5nZaC7wCNL1ONkTB";
 
 export const VOLUNTEER_GROUP_NAME = "Kumbh Setu · Volunteers";
 
