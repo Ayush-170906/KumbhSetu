@@ -35,6 +35,7 @@ const ACTION_KEYS = new Set([
   "attachPhoto",
   "sendZoneMessage",
   "submitFeedback",
+  "issueEPass",
   "createFamilyGroup",
   "addFamilyMember",
   "removeFamilyMember",

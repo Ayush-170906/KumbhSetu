@@ -273,6 +273,24 @@ export interface FamilyGroup {
   members: FamilyMember[];
 }
 
+export type EPassCategory =
+  | "general"
+  | "senior_divyang"
+  | "family_children"
+  | "snan_slot";
+
+/** A colour-coded entry pass (cf. Maha Kumbh 2025's six-colour e-pass system).
+ * Carries a scannable code; shown at gates to skip the general queue. */
+export interface EPass {
+  id: string; // "KP-83A21"
+  holder: string;
+  cluster: "nashik" | "trimbakeshwar";
+  date: string; // ISO snan date, or "any"
+  category: EPassCategory;
+  partySize: number;
+  issuedAt: string;
+}
+
 export type FeedbackCategory =
   | "facilities"
   | "cleanliness"

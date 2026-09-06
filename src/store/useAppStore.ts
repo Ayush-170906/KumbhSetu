@@ -28,6 +28,8 @@ import type {
   FeedbackCategory,
   FamilyGroup,
   FamilyMember,
+  EPass,
+  EPassCategory,
   GroundReport,
   GroundReportCategory,
   ReportSeverity,
@@ -191,6 +193,7 @@ export interface AppState {
   emergingSignals: EmergingSignal[];
   pilgrimFeedback: PilgrimFeedback[];
   familyGroups: FamilyGroup[];
+  ePasses: EPass[];
 
   initSimulation: () => void;
   tick: () => void;
@@ -212,6 +215,13 @@ export interface AppState {
     category: FeedbackCategory;
     message: string;
   }) => PilgrimFeedback;
+  issueEPass: (input: {
+    holder: string;
+    cluster: "nashik" | "trimbakeshwar";
+    date: string;
+    category: EPassCategory;
+    partySize: number;
+  }) => EPass;
   createFamilyGroup: (name: string) => FamilyGroup;
   addFamilyMember: (groupId: string, member: Omit<FamilyMember, "id">) => void;
   removeFamilyMember: (groupId: string, memberId: string) => void;
@@ -310,6 +320,7 @@ const defaultData = {
   emergingSignals: [] as EmergingSignal[],
   pilgrimFeedback: clone(INITIAL_FEEDBACK),
   familyGroups: [] as FamilyGroup[],
+  ePasses: [] as EPass[],
 };
 
 // Restore a prior session's incidents/tasks/etc. (if any) so a page reload
@@ -393,6 +404,20 @@ export const useAppStore = create<AppState>((set, get) => ({
       ],
     }));
     return fb;
+  },
+
+  issueEPass: (input) => {
+    const pass: EPass = {
+      id: `KP-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
+      holder: input.holder.trim() || "Pilgrim",
+      cluster: input.cluster,
+      date: input.date,
+      category: input.category,
+      partySize: Math.max(1, Math.min(50, Math.round(input.partySize))),
+      issuedAt: nowIso(),
+    };
+    set((s) => ({ ePasses: [pass, ...s.ePasses].slice(0, 50) }));
+    return pass;
   },
 
   createFamilyGroup: (name) => {
@@ -1251,6 +1276,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       emergingSignals: [],
       pilgrimFeedback: clone(INITIAL_FEEDBACK),
       familyGroups: [],
+      ePasses: [],
     }));
   },
 }));

@@ -12,6 +12,7 @@ import { SetuCompanion } from "@/components/setu/SetuCompanion";
 import { ReportIssueScreen } from "./ReportIssueScreen";
 import { PlanDashboard } from "./PlanDashboard";
 import { FamilyScreen } from "./FamilyScreen";
+import { EPassScreen } from "./EPassScreen";
 import { Icon } from "@/components/ui/Icon";
 
 export type PilgrimScreen =
@@ -22,6 +23,7 @@ export type PilgrimScreen =
   | "assistant"
   | "plan"
   | "family"
+  | "epass"
   | "report-issue";
 
 const titles: Record<PilgrimScreen, string> = {
@@ -32,6 +34,7 @@ const titles: Record<PilgrimScreen, string> = {
   assistant: "Ask Kumbh Setu",
   plan: "Plan my Kumbh Mela",
   family: "My Family Group",
+  epass: "Entry Pass",
   "report-issue": "Report an Issue",
 };
 
@@ -95,6 +98,7 @@ export default function PilgrimApp() {
       )}
       {screen === "plan" && <PlanDashboard language={store.language} />}
       {screen === "family" && <FamilyScreen zones={store.zones} />}
+      {screen === "epass" && <EPassScreen />}
       {screen === "report-issue" && <ReportIssueScreen zone={zone} onClose={() => setScreen("home")} />}
 
       {store.systemStatus.connectivity !== "nominal" && screen === "home" && (

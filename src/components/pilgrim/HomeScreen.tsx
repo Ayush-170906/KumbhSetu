@@ -15,10 +15,10 @@ import type { PilgrimScreen } from "./PilgrimApp";
 const actions: { screen: PilgrimScreen; key: Parameters<typeof t>[0]; icon: IconName; tone?: "sos" }[] = [
   { screen: "sos-type", key: "sos", icon: "sos", tone: "sos" },
   { screen: "facilities", key: "findFacility", icon: "map-pin" },
-  { screen: "plan", key: "planKumbh", icon: "route" },
   { screen: "lost-found", key: "lostFound", icon: "lost" },
   { screen: "family", key: "familyGroup", icon: "pilgrim" },
-  { screen: "report-issue", key: "reportIssue", icon: "qr" },
+  { screen: "epass", key: "entryPass", icon: "qr" },
+  { screen: "report-issue", key: "reportIssue", icon: "warning" },
   { screen: "assistant", key: "askAssistant", icon: "bell" },
 ];
 

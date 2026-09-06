@@ -42,6 +42,7 @@ const dict = {
   volunteerNotified: { en: "Volunteer notified", hi: "स्वयंसेवक को सूचित किया गया", mr: "स्वयंसेवकाला कळवले" },
   managementNotified: { en: "Management notified", hi: "प्रबंधन को सूचित किया गया", mr: "व्यवस्थापनाला कळवले" },
   familyGroup: { en: "Family Group", hi: "परिवार समूह", mr: "कुटुंब गट" },
+  entryPass: { en: "Entry Pass", hi: "प्रवेश पास", mr: "प्रवेश पास" },
   // Tamil is not yet translated for the pilgrim Home/SOS strings — `t()` falls
   // back to English. The Setu companion carries its own Tamil field phrasebook
   // (src/ai/providers/mockTranslationProvider.ts) for live volunteer↔pilgrim use.
