@@ -16,6 +16,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { ZoneIntelligence } from "@/components/maps/ZoneIntelligence";
 import { IncidentDetail } from "@/components/incidents/IncidentDetail";
 import { SetuCompanion } from "@/components/setu/SetuCompanion";
+import { SecurityView } from "@/components/security/SecurityView";
 
 export default function ManagementApp() {
   const store = useAppStore();
@@ -71,6 +72,12 @@ export default function ManagementApp() {
             <div className="w-full max-w-2xl flex flex-col min-h-0 border-x border-border">
               <SetuCompanion persona="management" variant="full" />
             </div>
+          </div>
+        )}
+
+        {view === "security" && (
+          <div className="flex-1 overflow-y-auto scroll-thin">
+            <SecurityView />
           </div>
         )}
 

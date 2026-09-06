@@ -7,16 +7,18 @@ export type ManagementView =
   | "copilot"
   | "pulse"
   | "fieldreports"
-  | "analytics"
-  | "log"
+  | "security"
   | "advisories"
-  | "lostfound";
+  | "lostfound"
+  | "analytics"
+  | "log";
 
 const items: { id: ManagementView; label: string; icon: IconName }[] = [
   { id: "operations", label: "Live Operations", icon: "layers" },
   { id: "copilot", label: "Ops Copilot", icon: "pilgrim" },
   { id: "pulse", label: "Kumbh Pulse", icon: "pulse" },
   { id: "fieldreports", label: "Field Reports", icon: "log" },
+  { id: "security", label: "Security Intelligence", icon: "shield" },
   { id: "advisories", label: "Advisories", icon: "bell" },
   { id: "lostfound", label: "Lost & Found", icon: "lost" },
   { id: "analytics", label: "Analytics", icon: "chart" },
