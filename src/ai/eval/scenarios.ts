@@ -22,6 +22,8 @@ export interface Scenario {
   lang?: LanguageCode;
   /** in-session translation pair, to test relay routing */
   translationPair?: { volunteer: LanguageCode; other: LanguageCode };
+  /** simulate: Setu just asked which language the pilgrim speaks */
+  awaitingTranslationLanguage?: boolean;
   expectIntent?: SetuIntent;
   expectTool?: string;
   expectNoTool?: boolean;
@@ -73,6 +75,15 @@ export const SCENARIOS: Scenario[] = [
     translationPair: { volunteer: "mr", other: "ta" },
     expectIntent: "translation",
     expectTool: "translate_text",
+  },
+  {
+    // Setu asked "which language?" — a bare "marathi" must still open the session.
+    id: "tr-followup-language",
+    group: "translation",
+    message: "marathi",
+    awaitingTranslationLanguage: true,
+    expectIntent: "translation",
+    expectTool: "start_translation_session",
   },
 
   // --- safety ---

@@ -59,6 +59,8 @@ export interface SessionMemorySnapshot {
   translationPair?: { volunteer: LanguageCode; other: LanguageCode };
   /** The last ground-report draft being assembled, if any. */
   pendingReportCategory?: GroundReportCategory;
+  /** Setu asked which language the pilgrim speaks and is waiting for the answer. */
+  awaitingTranslationLanguage?: boolean;
 }
 
 /** A tool the model wants run. `arguments` is validated per-tool in the registry. */

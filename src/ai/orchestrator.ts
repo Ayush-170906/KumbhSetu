@@ -135,6 +135,14 @@ function applyMemoryEffects(turn: SetuTurn, input: TurnInput) {
   }
   if (turn.exitTranslationMode) m.endTranslation();
 
+  // Setu asked "which language is the pilgrim speaking?" — remember that, so a
+  // bare "marathi" on the next turn is read as the answer, not a new request.
+  if (turn.intent === "translation" && turn.followUp && !turn.enterTranslationMode) {
+    m.setAwaitingTranslationLanguage(true);
+  } else if (turn.intent !== "translation" || turn.enterTranslationMode) {
+    m.setAwaitingTranslationLanguage(false);
+  }
+
   if (turn.reportDraft) {
     m.setPendingReport(turn.reportDraft.category as GroundReportCategory);
   } else if (turn.intent !== "ground_report") {

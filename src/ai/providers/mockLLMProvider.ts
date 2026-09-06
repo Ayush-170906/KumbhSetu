@@ -174,6 +174,12 @@ export class MockLLMProvider implements AIProvider {
     const cls = classifyIntent(text);
     let intent = cls.intent;
 
+    // Setu just asked which language the pilgrim speaks — read this turn as the
+    // answer (e.g. a bare "marathi") unless it's an emergency.
+    if (req.memory.awaitingTranslationLanguage && !EMERGENCY_RE.test(text)) {
+      intent = "translation";
+    }
+
     // Continue an in-progress ground report even if this turn's words alone
     // wouldn't classify as one.
     if (req.memory.pendingReportCategory && intent !== "emergency" && intent !== "translation") {

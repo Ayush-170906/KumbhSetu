@@ -49,6 +49,7 @@ async function runOne(s: Scenario): Promise<Result> {
       entities: {},
       translationPair: s.translationPair,
       pendingReportCategory: undefined,
+      awaitingTranslationLanguage: s.awaitingTranslationLanguage,
     },
     offline: false,
   });

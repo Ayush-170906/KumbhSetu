@@ -12,6 +12,9 @@ export interface SessionMemory {
   entities: Record<string, string>;
   translationPair?: { volunteer: LanguageCode; other: LanguageCode };
   pendingReportCategory?: GroundReportCategory;
+  /** Setu just asked "which language is the pilgrim speaking?" and is waiting
+   *  for a bare answer like "marathi" that wouldn't classify on its own. */
+  awaitingTranslationLanguage?: boolean;
   lastActivityAt: number;
 }
 
@@ -43,6 +46,7 @@ export class SetuMemory {
       entities: { ...this.mem.entities },
       translationPair: this.mem.translationPair,
       pendingReportCategory: this.mem.pendingReportCategory,
+      awaitingTranslationLanguage: this.mem.awaitingTranslationLanguage,
       lastActivityAt: this.mem.lastActivityAt,
     };
   }
@@ -75,11 +79,20 @@ export class SetuMemory {
   startTranslation(volunteer: LanguageCode, other: LanguageCode) {
     this.touch();
     this.mem.translationPair = { volunteer, other };
+    this.mem.awaitingTranslationLanguage = false;
   }
 
   endTranslation() {
     this.touch();
     this.mem.translationPair = undefined;
+    this.mem.awaitingTranslationLanguage = false;
+  }
+
+  /** Setu asked which language the pilgrim speaks; the next turn should be
+   *  read as the answer even if it's just "marathi". */
+  setAwaitingTranslationLanguage(value: boolean) {
+    this.touch();
+    this.mem.awaitingTranslationLanguage = value;
   }
 
   setPendingReport(category: GroundReportCategory | undefined) {
