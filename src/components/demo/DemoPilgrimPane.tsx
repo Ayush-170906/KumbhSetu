@@ -1,48 +1,86 @@
-import type { Incident, Volunteer, Zone } from "@/lib/types";
+"use client";
+
+import { useEffect, useRef } from "react";
+import type { Incident, Volunteer } from "@/lib/types";
 import { Icon } from "@/components/ui/Icon";
 import { StageStepper } from "@/components/incidents/StageStepper";
-import { typeLabel } from "@/lib/incidentMeta";
+import { DemoBubble, SetuProvenance } from "./DemoShared";
+import {
+  PILGRIM_TAMIL,
+  PILGRIM_TAMIL_GLOSS,
+  SETU_PILGRIM_REPLY,
+  SETU_PILGRIM_INTENT,
+} from "@/lib/demoScript";
 
 export function DemoPilgrimPane({
+  stepIndex,
   incident,
-  zone,
   responder,
 }: {
+  stepIndex: number;
   incident?: Incident;
-  zone?: Zone;
   responder?: Volunteer;
 }) {
-  return (
-    <div className="flex-1 flex flex-col p-4">
-      <PaneHeader icon="pilgrim" title="Pilgrim" subtitle={zone ? `Simulated at ${zone.shortName}` : undefined} />
+  const showMessage = stepIndex >= 2;
+  const showReply = stepIndex >= 3;
 
-      {!incident ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
-          <div className="h-12 w-12 rounded-full bg-surface-muted flex items-center justify-center">
-            <Icon name="map-pin" className="h-5 w-5 text-ink-soft" />
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [stepIndex, incident?.status]);
+
+  return (
+    <div className="flex flex-1 flex-col p-4">
+      <PaneHeader icon="pilgrim" title="Pilgrim" subtitle="Needs help" />
+
+      {!showMessage ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-muted">
+            <Icon name="pilgrim" className="h-5 w-5 text-ink-soft" />
           </div>
-          <p className="text-xs text-ink-muted max-w-[16rem]">Waiting for a pilgrim to raise an SOS…</p>
+          <p className="max-w-[16rem] text-xs text-ink-muted">
+            The Kumbh Setu app, in the pilgrim&rsquo;s own language.
+          </p>
         </div>
       ) : (
-        <div className="mt-2 space-y-4 animate-fade-in-up">
-          <div className="rounded-sm border border-border bg-surface p-3">
-            <div className="flex items-center gap-2 text-status-red">
-              <Icon name="sos" className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wide">{typeLabel(incident.type)} SOS Sent</span>
+        <div ref={scrollRef} className="mt-3 space-y-2.5 overflow-y-auto scroll-thin pr-0.5">
+          <div className="rounded-sm border border-status-amber-border bg-status-amber-bg px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-status-amber">
+            Demo scenario — not a real pilgrim
+          </div>
+
+          <DemoBubble from="pilgrim" label="Pilgrim · Tamil">
+            {PILGRIM_TAMIL}
+            <div className="mt-1 text-[11px] italic text-ink-soft">{PILGRIM_TAMIL_GLOSS}</div>
+          </DemoBubble>
+
+          {showReply && (
+            <div className="animate-fade-in-up">
+              <DemoBubble from="assistant" label={`Kumbh Setu Assistant · ${SETU_PILGRIM_INTENT}`} tone="emergency">
+                {SETU_PILGRIM_REPLY}
+              </DemoBubble>
+              <div className="px-1">
+                <SetuProvenance />
+              </div>
             </div>
-            <div className="font-mono-num text-sm text-ink mt-1">{incident.code}</div>
-          </div>
+          )}
 
-          <div className="rounded-sm border border-border bg-surface p-3">
-            <div className="text-[10px] uppercase tracking-wide text-ink-soft mb-3">Status</div>
-            <StageStepper status={incident.status} />
-          </div>
-
-          {responder && (
-            <div className="rounded-sm border border-border bg-surface-muted px-3 py-2.5 text-xs">
-              <div className="text-ink-soft">Responder</div>
-              <div className="text-ink font-medium mt-0.5">{responder.name} · {responder.id}</div>
-              {incident.etaMinutes && <div className="text-ink-soft mt-0.5">ETA {incident.etaMinutes} min</div>}
+          {incident && (
+            <div className="animate-fade-in-up rounded-sm border border-border bg-surface p-3">
+              <div className="mb-2 text-[10px] uppercase tracking-wide text-ink-soft">Linked incident</div>
+              <div className="font-mono-num text-sm text-ink">{incident.code}</div>
+              <div className="mt-3">
+                <StageStepper status={incident.status} />
+              </div>
+              {responder && (
+                <div className="mt-3 rounded-sm bg-surface-muted px-3 py-2 text-xs">
+                  <div className="text-ink-soft">Responder assigned</div>
+                  <div className="mt-0.5 font-medium text-ink">
+                    {responder.name} · {responder.id}
+                  </div>
+                  {incident.etaMinutes ? <div className="mt-0.5 text-ink-soft">ETA {incident.etaMinutes} min</div> : null}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -51,10 +89,18 @@ export function DemoPilgrimPane({
   );
 }
 
-export function PaneHeader({ icon, title, subtitle }: { icon: Parameters<typeof Icon>[0]["name"]; title: string; subtitle?: string }) {
+export function PaneHeader({
+  icon,
+  title,
+  subtitle,
+}: {
+  icon: Parameters<typeof Icon>[0]["name"];
+  title: string;
+  subtitle?: string;
+}) {
   return (
-    <div className="flex items-center gap-2.5 pb-3 border-b border-border">
-      <div className="h-8 w-8 rounded-sm bg-primary-soft flex items-center justify-center shrink-0">
+    <div className="flex items-center gap-2.5 border-b border-border pb-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-primary-soft">
         <Icon name={icon} className="h-4 w-4 text-primary-dark" />
       </div>
       <div>

@@ -4,66 +4,128 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/store/useAppStore";
 import { subscribeToRealtimeEvents } from "@/lib/api";
+import { Icon } from "@/components/ui/Icon";
+import { demoStep, loopStageForStep } from "@/lib/demoScript";
 import { DemoControls } from "./DemoControls";
 import { DemoTimeline } from "./DemoTimeline";
 import { DemoPilgrimPane } from "./DemoPilgrimPane";
 import { DemoManagementPane } from "./DemoManagementPane";
 import { DemoVolunteerPane } from "./DemoVolunteerPane";
-import { Icon } from "@/components/ui/Icon";
+import { DemoIntro, DemoOutro } from "./DemoStage";
+import { DemoLoopDiagram } from "./DemoShared";
+
+const FOCUS_ZONE = "z04";
 
 export default function DemoApp() {
   const store = useAppStore();
+  const { demo } = store;
 
   useEffect(() => {
     subscribeToRealtimeEvents();
   }, []);
 
-  const incident = store.demo.activeIncidentId ? store.incidents.find((i) => i.id === store.demo.activeIncidentId) : undefined;
-  const task = store.demo.activeTaskId ? store.tasks.find((t) => t.id === store.demo.activeTaskId) : undefined;
-  const focusZone = store.zones.find((z) => z.id === (incident?.zoneId ?? "z04")) ?? store.zones[0];
-  const responder = incident?.assignedVolunteerId ? store.volunteers.find((v) => v.id === incident.assignedVolunteerId) : undefined;
+  const step = demo.stepIndex;
+  const meta = demoStep(Math.max(step, 1));
+  const activePanel = meta.panel;
+
+  const incident = demo.activeIncidentId ? store.incidents.find((i) => i.id === demo.activeIncidentId) : undefined;
+  const task = demo.activeTaskId ? store.tasks.find((t) => t.id === demo.activeTaskId) : undefined;
+  const focusZone = store.zones.find((z) => z.id === (incident?.zoneId ?? FOCUS_ZONE)) ?? store.zones[0];
+  const focusSnapshot = store.riskSnapshots[focusZone.id];
+  const responder = incident?.assignedVolunteerId
+    ? store.volunteers.find((v) => v.id === incident.assignedVolunteerId)
+    : undefined;
+  const reportOne = demo.reportOneId ? store.groundReports.find((r) => r.id === demo.reportOneId) : undefined;
+  const reportTwo = demo.reportTwoId ? store.groundReports.find((r) => r.id === demo.reportTwoId) : undefined;
+
+  const preStart = !demo.running && !demo.completed;
+  const showIntro = preStart || (demo.running && step <= 1);
+  const showOutro = demo.completed || step >= 20;
+
+  const paneRing = (panel: string) =>
+    activePanel === panel && demo.running && !demo.completed
+      ? "ring-2 ring-inset ring-primary/60"
+      : "";
 
   return (
-    <div className="h-screen flex flex-col bg-ivory">
-      <div className="h-12 shrink-0 border-b border-border bg-surface flex items-center px-4 gap-2">
-        <Link href="/" className="p-1 -ml-1 text-ink-muted" aria-label="Home">
+    <div className="flex h-screen flex-col bg-ivory">
+      <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-surface px-4">
+        <Link href="/" className="-ml-1 p-1 text-ink-muted" aria-label="Home">
           <Icon name="map-pin" className="h-4 w-4" />
         </Link>
         <span className="text-xs font-semibold text-ink">Kumbh Setu</span>
-        <span className="text-xs text-ink-soft">/ Demo</span>
+        <span className="text-xs text-ink-soft">/ Live Demo</span>
         <div className="ml-auto flex items-center gap-3 text-xs">
-          <Link href="/pilgrim" className="text-ink-muted hover:text-ink">Open Pilgrim</Link>
-          <Link href="/field?tab=tasks" className="text-ink-muted hover:text-ink">Open Volunteer</Link>
-          <Link href="/management" className="text-ink-muted hover:text-ink">Open Management</Link>
+          <span className="hidden text-ink-soft sm:inline">Run the manual product:</span>
+          <Link href="/pilgrim" className="text-ink-muted hover:text-ink">Pilgrim</Link>
+          <Link href="/field?tab=tasks" className="text-ink-muted hover:text-ink">Volunteer</Link>
+          <Link href="/management" className="text-ink-muted hover:text-ink">Management</Link>
         </div>
       </div>
 
       <DemoControls
-        running={store.demo.running}
-        completed={store.demo.completed}
-        stepIndex={store.demo.stepIndex}
-        totalSteps={store.demo.totalSteps}
-        onStart={() => store.startDemo()}
+        running={demo.running}
+        paused={demo.paused}
+        completed={demo.completed}
+        stepIndex={demo.stepIndex}
+        totalSteps={demo.totalSteps}
+        onStart={store.startDemo}
+        onPause={store.pauseDemo}
+        onResume={store.resumeDemo}
+        onSkip={store.skipDemoStep}
+        onRestart={store.restartDemo}
+        onExit={store.exitDemo}
       />
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border overflow-y-auto md:overflow-visible">
-        <DemoPilgrimPane incident={incident} zone={focusZone} responder={responder} />
-        <DemoManagementPane
-          zones={store.zones}
-          facilities={store.facilities}
-          volunteers={store.volunteers}
-          incidents={store.incidents}
-          focusZone={focusZone}
-          focusSnapshot={store.riskSnapshots[focusZone.id]}
-        />
-        <DemoVolunteerPane volunteer={responder} task={task} incident={incident} zone={focusZone} />
+      {demo.running && !demo.completed && step > 1 && step < 20 && (
+        <div className="hidden shrink-0 border-b border-border bg-surface px-4 py-1.5 md:block">
+          <DemoLoopDiagram activeIndex={loopStageForStep(step)} compact />
+        </div>
+      )}
+
+      <div className="relative min-h-0 flex-1">
+        {showIntro && <DemoIntro onStart={store.startDemo} started={demo.running} />}
+        {showOutro && <DemoOutro onReplay={store.restartDemo} onExit={store.exitDemo} />}
+
+        <div className="grid h-full grid-cols-1 divide-y divide-border overflow-y-auto md:grid-cols-3 md:divide-x md:divide-y-0 md:overflow-visible">
+          <div className={`flex min-h-0 flex-col overflow-hidden transition-shadow ${paneRing("pilgrim")}`}>
+            <DemoPilgrimPane stepIndex={step} incident={incident} responder={responder} />
+          </div>
+          <div className={`flex min-h-0 flex-col overflow-hidden transition-shadow ${paneRing("management")}`}>
+            <DemoManagementPane
+              stepIndex={step}
+              zones={store.zones}
+              facilities={store.facilities}
+              volunteers={store.volunteers}
+              incidents={store.incidents}
+              focusZone={focusZone}
+              focusSnapshot={focusSnapshot}
+              emergingSignals={store.emergingSignals}
+              auditLog={store.auditLog}
+              incident={incident}
+              reportOne={reportOne}
+              reportTwo={reportTwo}
+            />
+          </div>
+          <div className={`flex min-h-0 flex-col overflow-hidden transition-shadow ${paneRing("volunteer")}`}>
+            <DemoVolunteerPane
+              stepIndex={step}
+              volunteer={responder}
+              task={task}
+              incident={incident}
+              zone={focusZone}
+              reportOne={reportOne}
+              reportTwo={reportTwo}
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="h-40 shrink-0 border-t border-border bg-surface overflow-y-auto scroll-thin">
-        <div className="sticky top-0 bg-surface px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft border-b border-border">
+      <div className="h-28 shrink-0 overflow-y-auto border-t border-border bg-surface scroll-thin">
+        <div className="sticky top-0 border-b border-border bg-surface px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft">
           Scenario Timeline
         </div>
-        <DemoTimeline log={store.demo.log} />
+        <DemoTimeline log={demo.log} />
       </div>
     </div>
   );

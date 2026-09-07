@@ -62,6 +62,12 @@ import {
   textMatchScore,
 } from "@/lib/dispatch";
 import { loadPersistedState, initPersistence } from "./persist";
+import {
+  DEMO_TOTAL,
+  demoStep,
+  VOL_REPORT_SUMMARY,
+  VOL2_REPORT_SUMMARY,
+} from "@/lib/demoScript";
 
 const MODEL_VERSION = "pulse-rule-v0.3";
 const BASELINE_RISK: Record<string, RiskSnapshot> = RISK_SNAPSHOTS;
@@ -160,13 +166,26 @@ export interface DemoLogEntry {
 
 interface DemoState {
   running: boolean;
+  paused: boolean;
   completed: boolean;
+  /** 0 = not started; 1..totalSteps = the current scripted beat. */
   stepIndex: number;
   totalSteps: number;
   log: DemoLogEntry[];
   activeIncidentId?: string;
   activeTaskId?: string;
+  reportOneId?: string;
+  reportTwoId?: string;
 }
+
+const emptyDemoState = (): DemoState => ({
+  running: false,
+  paused: false,
+  completed: false,
+  stepIndex: 0,
+  totalSteps: DEMO_TOTAL,
+  log: [],
+});
 
 export interface AppState {
   zones: Zone[];
@@ -236,7 +255,7 @@ export interface AppState {
 
   createIncident: (input: ReportIncidentInput) => Incident;
   triageIncident: (incidentId: string) => void;
-  dispatchIncident: (incidentId: string, excludeVolunteerIds?: string[]) => void;
+  dispatchIncident: (incidentId: string, excludeVolunteerIds?: string[], forceVolunteerId?: string) => void;
   submitSOS: (input: ReportIncidentInput) => Incident;
 
   acceptTask: (taskId: string) => void;
@@ -247,6 +266,11 @@ export interface AppState {
   enrollVolunteer: (input: EnrollVolunteerInput) => Volunteer;
 
   startDemo: () => void;
+  pauseDemo: () => void;
+  resumeDemo: () => void;
+  skipDemoStep: () => void;
+  restartDemo: () => void;
+  exitDemo: () => void;
   resetDemo: () => void;
   resetAll: () => void;
 }
@@ -257,6 +281,163 @@ let demoTimers: ReturnType<typeof setTimeout>[] = [];
 function clearDemoTimers() {
   demoTimers.forEach((t) => clearTimeout(t));
   demoTimers = [];
+}
+
+// --- Live Demo engine -------------------------------------------------------
+// A deterministic, self-driving walkthrough of the closed-loop story across
+// the Pilgrim / Volunteer / Management panels. Every beat is a scripted
+// mutation on the EXISTING store actions — no LLM is in the critical path, so
+// the demo cannot stall or diverge. See src/lib/demoScript.ts for the copy.
+
+type StoreGet = () => AppState;
+type StoreSet = (updater: (s: AppState) => Partial<AppState>) => void;
+
+const DEMO_ZONE = "z04";
+
+/** The deterministic state effect for a single 1-based demo step. */
+function runDemoStep(get: StoreGet, set: StoreSet, n: number) {
+  const zone = findZone(DEMO_ZONE)!;
+  const at = (dx: number, dy: number) => ({ x: zone.labelPoint.x + dx, y: zone.labelPoint.y + dy });
+
+  switch (n) {
+    case 6: {
+      // Volunteer confirms the AI-proposed ground report → first field report.
+      const report = get().createGroundReport({
+        category: "lost_person",
+        zoneId: DEMO_ZONE,
+        position: at(10, -20),
+        summary: VOL_REPORT_SUMMARY,
+        detail: "Filed via Setu AI after translating for a Tamil-speaking parent.",
+        severity: "high",
+        source: "volunteer_observation",
+        reportedBy: { role: "volunteer", id: "V-218", label: "Volunteer · M. Joshi (V-218)" },
+        estimatedPeopleAffected: 1,
+        aiConfidence: 0.9,
+      });
+      set((s) => ({ demo: { ...s.demo, reportOneId: report.id } }));
+      break;
+    }
+    case 8: {
+      // A second, independent volunteer files a matching report.
+      const report = get().createGroundReport({
+        category: "lost_person",
+        zoneId: DEMO_ZONE,
+        position: at(-30, 12),
+        summary: VOL2_REPORT_SUMMARY,
+        detail: "Independent report from a second volunteer near Gate 3.",
+        severity: "moderate",
+        source: "volunteer_observation",
+        reportedBy: { role: "volunteer", id: "V-241", label: "Volunteer · R. Kamble (V-241)" },
+        estimatedPeopleAffected: 1,
+      });
+      set((s) => ({ demo: { ...s.demo, reportTwoId: report.id } }));
+      break;
+    }
+    case 10: {
+      // Control room corroborates the first report against the second.
+      const id = get().demo.reportOneId;
+      if (id) get().corroborateGroundReport(id, "Control Room");
+      break;
+    }
+    case 11: {
+      // Kumbh Pulse escalates Ghat 4 to red for the scripted scenario.
+      set((s) => ({
+        zones: s.zones.map((z) =>
+          z.id === DEMO_ZONE ? { ...z, riskScore: 84, riskBand: "red" as const, trend: "up" as const } : z
+        ),
+        riskSnapshots: {
+          ...s.riskSnapshots,
+          [DEMO_ZONE]: {
+            ...s.riskSnapshots[DEMO_ZONE],
+            score: 84,
+            band: "red" as const,
+            confidence: 0.79,
+            forecastBand: "red" as const,
+            forecastHorizonMinutes: [10, 20] as [number, number],
+            generatedAt: nowIso(),
+            narrative:
+              "Two independent field reports of a missing child on the Ramkund / Ghat 4 approach during elevated pre-aarti density. Escalated for a coordinated response.",
+          },
+        },
+      }));
+      break;
+    }
+    case 13: {
+      // Promote the corroborated signal to an incident.
+      const id = get().demo.reportOneId;
+      const incident = id ? get().promoteReportToIncident(id, "Control Room") : undefined;
+      if (incident) {
+        get().triageIncident(incident.id);
+        set((s) => ({ demo: { ...s.demo, activeIncidentId: incident.id } }));
+      }
+      // promote → createIncident recomputes the zone snapshot; keep Ghat 4 in
+      // the red band for the rest of the scripted response.
+      set((s) => ({
+        zones: s.zones.map((z) =>
+          z.id === DEMO_ZONE ? { ...z, riskScore: 84, riskBand: "red" as const, trend: "up" as const } : z
+        ),
+        riskSnapshots: {
+          ...s.riskSnapshots,
+          [DEMO_ZONE]: { ...s.riskSnapshots[DEMO_ZONE], score: 84, band: "red" as const, generatedAt: nowIso() },
+        },
+      }));
+      break;
+    }
+    case 15: {
+      // Management confirms the Ops Copilot recommendation → dispatch V-233.
+      const incidentId = get().demo.activeIncidentId;
+      if (incidentId) {
+        get().dispatchIncident(incidentId, [], "V-233");
+        const task = get().tasks.find((t) => t.incidentId === incidentId);
+        if (task) set((s) => ({ demo: { ...s.demo, activeTaskId: task.id } }));
+      }
+      break;
+    }
+    case 16: {
+      const taskId = get().demo.activeTaskId;
+      if (taskId) get().acceptTask(taskId);
+      break;
+    }
+    case 17: {
+      const taskId = get().demo.activeTaskId;
+      if (taskId) get().arriveTask(taskId);
+      break;
+    }
+    case 18: {
+      const taskId = get().demo.activeTaskId;
+      if (taskId) get().resolveTask(taskId, "resolved");
+      break;
+    }
+    default:
+      // Intro, pilgrim narration, pure-UI management beats and the outro have
+      // no store effect — the panels render from `stepIndex` alone.
+      break;
+  }
+}
+
+/** Runs the next scripted beat and schedules the one after it. */
+function advanceDemo(get: StoreGet, set: StoreSet) {
+  const demo = get().demo;
+  if (!demo.running || demo.paused) return;
+
+  const next = demo.stepIndex + 1;
+  if (next > demo.totalSteps) {
+    clearDemoTimers();
+    set((s) => ({ demo: { ...s.demo, running: false, completed: true } }));
+    return;
+  }
+
+  runDemoStep(get, set, next);
+  const meta = demoStep(next);
+  set((s) => ({
+    demo: {
+      ...s.demo,
+      stepIndex: next,
+      log: [...s.demo.log, { id: `demo-${next}-${Date.now()}`, time: nowIso(), label: meta.narration }],
+    },
+  }));
+
+  demoTimers.push(setTimeout(() => advanceDemo(get, set), meta.durationMs));
 }
 
 function pushTimeline(incident: Incident, status: Incident["timeline"][number]["status"], label: string, actor?: string, detail?: string) {
@@ -310,7 +491,7 @@ const defaultData = {
   incidentSeq: 2, // seed already used ks-1039, next fresh incident starts at 1040
   simTickCount: 0,
   simulationRunning: false,
-  demo: { running: false, completed: false, stepIndex: 0, totalSteps: 6, log: [] } as DemoState,
+  demo: emptyDemoState(),
   advisories: clone(INITIAL_ADVISORIES),
   foundReports: clone(INITIAL_FOUND_REPORTS),
   language: "en" as LanguageCode,
@@ -891,19 +1072,27 @@ export const useAppStore = create<AppState>((set, get) => ({
     }));
   },
 
-  dispatchIncident: (incidentId, excludeVolunteerIds = []) => {
+  dispatchIncident: (incidentId, excludeVolunteerIds = [], forceVolunteerId) => {
     const state = get();
     const incident = state.incidents.find((i) => i.id === incidentId);
     if (!incident) return;
 
-    const match = findNearestAvailableVolunteer(
-      state.volunteers,
-      incident.zoneId,
-      incident.position,
-      excludeVolunteerIds,
-      incident.requiredSkill,
-      incident.preferredLanguage
-    );
+    // `forceVolunteerId` lets the control room (and the scripted Live Demo)
+    // assign a specific responder instead of the nearest-match algorithm.
+    // Default behaviour is unchanged when it is omitted.
+    const forced = forceVolunteerId
+      ? state.volunteers.find((v) => v.id === forceVolunteerId && !excludeVolunteerIds.includes(v.id))
+      : undefined;
+    const match = forced
+      ? { volunteer: forced, quality: "nearest" as const }
+      : findNearestAvailableVolunteer(
+          state.volunteers,
+          incident.zoneId,
+          incident.position,
+          excludeVolunteerIds,
+          incident.requiredSkill,
+          incident.preferredLanguage
+        );
     const responder = match?.volunteer;
 
     if (!responder) {
@@ -1171,86 +1360,53 @@ export const useAppStore = create<AppState>((set, get) => ({
   startDemo: () => {
     clearDemoTimers();
     get().resetAll();
+    set(() => ({ demo: { ...emptyDemoState(), running: true } }));
+    // Kick off step 1 shortly after reset so the intro card lands cleanly.
+    demoTimers.push(setTimeout(() => advanceDemo(get, set), 600));
+  },
 
-    const zoneId = "z04";
-    const zone = findZone(zoneId)!;
+  pauseDemo: () => {
+    clearDemoTimers();
+    set((s) => (s.demo.running && !s.demo.completed ? { demo: { ...s.demo, paused: true } } : {}));
+  },
 
-    set(() => ({
-      demo: { running: true, completed: false, stepIndex: 0, totalSteps: 6, log: [] },
-    }));
+  resumeDemo: () => {
+    const demo = get().demo;
+    if (!demo.running || !demo.paused) return;
+    clearDemoTimers();
+    set((s) => ({ demo: { ...s.demo, paused: false } }));
+    // Give the audience a beat to re-read, then continue the timeline.
+    const meta = demoStep(demo.stepIndex || 1);
+    demoTimers.push(setTimeout(() => advanceDemo(get, set), Math.min(2500, meta.durationMs)));
+  },
 
-    const log = (label: string) => {
-      set((s) => ({
-        demo: {
-          ...s.demo,
-          stepIndex: s.demo.stepIndex + 1,
-          log: [...s.demo.log, { id: `${Date.now()}-${Math.random()}`, time: nowIso(), label }],
-        },
-      }));
-    };
+  skipDemoStep: () => {
+    const demo = get().demo;
+    if (!demo.running || demo.completed) return;
+    const wasPaused = demo.paused;
+    clearDemoTimers();
+    set((s) => ({ demo: { ...s.demo, paused: false } }));
+    advanceDemo(get, set);
+    if (wasPaused && get().demo.running) {
+      clearDemoTimers();
+      set((s) => ({ demo: { ...s.demo, paused: true } }));
+    }
+  },
 
-    const schedule = (delay: number, fn: () => void) => {
-      demoTimers.push(setTimeout(fn, delay));
-    };
+  restartDemo: () => {
+    get().startDemo();
+  },
 
-    let t = 0;
-    schedule((t += 300), () => {
-      const incident = get().submitSOS({
-        type: "medical",
-        severity: "critical",
-        zoneId,
-        position: { x: zone.labelPoint.x + 20, y: zone.labelPoint.y - 30 },
-        reportedBy: { role: "pilgrim", label: "Pilgrim · Zone 04" },
-        summary: "Medical assistance requested near the Ghat 4 steps — elderly pilgrim, breathing difficulty.",
-      });
-      set((s) => ({ demo: { ...s.demo, activeIncidentId: incident.id } }));
-      log(`Pilgrim raised SOS — incident ${incident.code} created`);
-    });
-
-    schedule((t += 1600), () => {
-      log("Incident triaged — priority CRITICAL");
-    });
-
-    schedule((t += 1400), () => {
-      const incidentId = get().demo.activeIncidentId!;
-      const incident = get().incidents.find((i) => i.id === incidentId);
-      const responderId = incident?.assignedVolunteerId;
-      const task = get().tasks.find((tk) => tk.incidentId === incidentId);
-      if (task) set((s) => ({ demo: { ...s.demo, activeTaskId: task.id } }));
-      log(responderId ? `Nearest volunteer identified — ${responderId} notified` : "Escalated — no responder currently available");
-    });
-
-    schedule((t += 1800), () => {
-      const taskId = get().demo.activeTaskId;
-      if (taskId) {
-        get().acceptTask(taskId);
-        const assignee = get().tasks.find((tk) => tk.id === taskId)?.assigneeId;
-        log(`${assignee} accepted the task — en route`);
-      }
-    });
-
-    schedule((t += 3200), () => {
-      const taskId = get().demo.activeTaskId;
-      if (taskId) {
-        get().arriveTask(taskId);
-        const assignee = get().tasks.find((tk) => tk.id === taskId)?.assigneeId;
-        log(`${assignee} arrived on site`);
-      }
-    });
-
-    schedule((t += 2400), () => {
-      const taskId = get().demo.activeTaskId;
-      if (taskId) {
-        get().resolveTask(taskId, "resolved");
-        log("Incident resolved — response complete");
-      }
-      set((s) => ({ demo: { ...s.demo, running: false, completed: true } }));
-    });
+  exitDemo: () => {
+    clearDemoTimers();
+    // Clears the scripted incident/reports and the demo slice, but not auth
+    // or anything outside the store. Returns /demo to its pre-start state.
+    get().resetAll();
   },
 
   resetDemo: () => {
     clearDemoTimers();
-    set(() => ({ demo: { running: false, completed: false, stepIndex: 0, totalSteps: 6, log: [] } }));
+    set(() => ({ demo: emptyDemoState() }));
   },
 
   resetAll: () => {
@@ -1268,7 +1424,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       notifications: [],
       auditLog: clone(AUDIT_SEED),
       incidentSeq: 2,
-      demo: { running: false, completed: false, stepIndex: 0, totalSteps: 6, log: [] },
+      demo: emptyDemoState(),
       advisories: clone(INITIAL_ADVISORIES),
       foundReports: clone(INITIAL_FOUND_REPORTS),
       messages: [],
