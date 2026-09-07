@@ -22,6 +22,10 @@ export default function DemoApp() {
 
   useEffect(() => {
     subscribeToRealtimeEvents();
+    // A persisted, half-finished run from a previous visit shouldn't greet the
+    // next viewer with a stale timeline — start from a clean pre-run state.
+    const d = useAppStore.getState().demo;
+    if (!d.running && (d.completed || d.log.length > 0)) useAppStore.getState().resetDemo();
   }, []);
 
   const step = demo.stepIndex;
