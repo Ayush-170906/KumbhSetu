@@ -1,0 +1,477 @@
+<title>Kumbh Setu Table Pitch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap">
+
+<style>
+  /* ---- Kumbh Setu identity (from the product's globals.css) --------------- */
+  :root{
+    --ivory:#f7f1e6; --ivory-deep:#efe6d4; --surface:#fffdf8;
+    --surface-muted:#f1e9d8; --surface-sunk:#eadfc8;
+    --border:#ddd0b4; --border-strong:#c9b791;
+    --ink:#241a12; --ink-muted:#6d5f4d; --ink-soft:#9c8d76;
+    --saffron:#bf5326; --saffron-dark:#93401d; --saffron-soft:#f2dcc6;
+    --night:#1a120b; --night-soft:#2a1e13; --ember:#e0692f; --gold:#d9a441; --gold-soft:#f0d9a8;
+    --green:#1f6e45; --green-bg:#e2efe2; --green-border:#b9d6bb;
+    --amber:#a06816; --amber-bg:#f8edd4; --amber-border:#e6cd97;
+    --red:#a8382a; --red-bg:#f7e3de; --red-border:#e5b7ab;
+    --serif:"IBM Plex Serif",Georgia,serif;
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+    --ui:"Inter","Helvetica Neue",Arial,sans-serif;
+    --shadow:0 2px 8px rgba(36,26,18,.07),0 18px 48px rgba(36,26,18,.10);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--ivory);
+    color:var(--ink);
+    font-family:var(--ui);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    display:flex;flex-direction:column;align-items:center;
+    padding:clamp(14px,3vw,40px) 16px;
+    gap:18px;
+  }
+
+  /* ---- Stage: fixed 16:10, everything inside scales with container units -- */
+  .stage{
+    width:min(1120px, 95vw, calc((100dvh - 118px) * 1.6));
+    aspect-ratio:16/10;
+    container-type:inline-size;
+    position:relative;
+  }
+  .slide{
+    position:absolute;inset:0;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    padding:5.4cqw 6cqw;
+    display:none;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .slide.active{display:flex}
+  .slide.dark{
+    background:
+      radial-gradient(120% 90% at 82% 8%, rgba(224,105,47,.16), transparent 60%),
+      radial-gradient(90% 80% at 0% 100%, rgba(217,164,65,.12), transparent 55%),
+      var(--night);
+    border-color:var(--night-soft);
+    color:var(--gold-soft);
+  }
+
+  /* ---- Shared slide furniture ------------------------------------------- */
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:1.35cqw;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--saffron);
+    display:flex;align-items:center;gap:.8em;
+  }
+  .dark .eyebrow{color:var(--ember)}
+  .eyebrow::after{content:"";height:1px;flex:1;background:var(--border-strong);opacity:.7}
+  .dark .eyebrow::after{background:var(--night-soft);opacity:1}
+
+  h1{
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:3.5cqw;
+    line-height:1.14;
+    letter-spacing:-.005em;
+    text-wrap:balance;
+    margin:.7cqw 0 0;
+    max-width:26ch;
+  }
+  .dark h1{color:#fdf7ec}
+  h1 .accent{color:var(--saffron);font-style:italic}
+  .dark h1 .accent{color:var(--gold)}
+
+  .kicker{
+    margin-top:auto;
+    font-size:1.7cqw;
+    line-height:1.45;
+    color:var(--ink-muted);
+    max-width:60ch;
+  }
+  .kicker strong{color:var(--ink);font-weight:600}
+  .dark .kicker{color:var(--gold-soft)}
+  .dark .kicker strong{color:#fff}
+
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+
+  /* ---- Flow diagram --------------------------------------------------- */
+  .flow{width:100%;display:block}
+  .flow text{font-family:var(--mono)}
+
+  /* ---- Slide 3: two-column validation ------------------------------- */
+  .cols{display:grid;grid-template-columns:1.05fr 1fr;gap:4cqw;flex:1;min-height:0;align-content:center}
+  .cols>div:last-child{display:flex;flex-direction:column;gap:2cqw}
+  .col-h{
+    font-family:var(--mono);font-size:1.2cqw;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-soft);margin-bottom:1.6cqw;
+  }
+  ul.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1.15cqw}
+  ul.checks li{
+    display:grid;grid-template-columns:1.9cqw 1fr;gap:1cqw;align-items:start;
+    font-size:1.62cqw;line-height:1.32;color:var(--ink);
+  }
+  ul.checks li b{font-weight:600}
+  .tick{
+    width:1.9cqw;height:1.9cqw;border-radius:50%;
+    background:var(--green-bg);border:1px solid var(--green-border);
+    display:flex;align-items:center;justify-content:center;margin-top:.15cqw;
+  }
+  .tick svg{width:1.1cqw;height:1.1cqw;stroke:var(--green);stroke-width:2.4;fill:none}
+
+  .pilot{
+    background:var(--surface-muted);border:1px solid var(--border);
+    border-radius:10px;padding:2.4cqw;
+  }
+  .pilot .big{font-family:var(--serif);font-size:2.3cqw;line-height:1.2;color:var(--ink)}
+  .pilot .sub{font-size:1.45cqw;color:var(--ink-muted);margin-top:.6cqw}
+  .metrics{
+    margin-top:2cqw;padding-top:1.8cqw;border-top:1px solid var(--border-strong);
+    display:flex;flex-wrap:wrap;gap:.7cqw;
+  }
+  .metrics span{
+    font-family:var(--mono);font-size:1.12cqw;
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:5px;padding:.5cqw .7cqw;color:var(--ink-muted);
+  }
+  .synthnote{
+    margin-top:2.4cqw;
+    background:var(--amber-bg);border:1px solid var(--amber-border);
+    border-radius:8px;padding:1.3cqw 1.7cqw;
+    font-size:1.4cqw;color:var(--amber);display:flex;gap:.8em;align-items:center;
+  }
+  .synthnote::before{content:"";width:.75cqw;height:.75cqw;border-radius:50%;background:var(--amber);flex:none}
+
+  /* ---- Slide 4: asks ---------------------------------------------------- */
+  .asks{display:grid;grid-template-columns:1fr 1fr;gap:1.8cqw;flex:1;align-content:center}
+  .ask{
+    background:var(--surface-muted);border:1px solid var(--border);
+    border-left:3px solid var(--saffron);
+    border-radius:8px;padding:2cqw 2.2cqw;
+    display:flex;flex-direction:column;gap:.5cqw;
+  }
+  .ask .n{font-family:var(--mono);font-size:1.15cqw;color:var(--saffron);letter-spacing:.1em}
+  .ask .t{font-size:1.85cqw;font-weight:600;color:var(--ink);line-height:1.15}
+  .ask .d{font-size:1.3cqw;color:var(--ink-muted);line-height:1.35}
+  .close{
+    font-family:var(--serif);font-style:italic;font-weight:400;
+    font-size:2.25cqw;line-height:1.28;color:var(--saffron-dark);
+    margin-top:2.4cqw;max-width:34ch;text-wrap:balance;
+  }
+
+  /* ---- Rail --------------------------------------------------------------- */
+  .rail{
+    width:min(1120px, 95vw, calc((100dvh - 118px) * 1.6));
+    display:flex;align-items:center;gap:14px;
+    font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  .rail .brand{color:var(--ink-muted)}
+  .rail .dots{display:flex;gap:8px;margin-left:auto}
+  .rail button{
+    appearance:none;border:1px solid var(--border-strong);background:transparent;
+    width:auto;padding:5px 10px;border-radius:999px;
+    font:inherit;letter-spacing:.12em;color:var(--ink-soft);cursor:pointer;
+    transition:background .15s,color .15s,border-color .15s;
+  }
+  .rail button[aria-current="true"]{
+    background:var(--saffron);border-color:var(--saffron);color:#fff;
+  }
+  .rail button:hover:not([aria-current="true"]){color:var(--ink);border-color:var(--ink-soft)}
+  .rail button:focus-visible{outline:2px solid var(--saffron);outline-offset:2px}
+
+  .hint{
+    width:min(1160px,96vw);text-align:center;
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--ink-soft);
+    text-transform:uppercase;opacity:.75;
+  }
+
+  /* ---- Click zones for advancing (invisible) ---------------------------- */
+  .tap{position:absolute;top:0;bottom:0;width:34%;cursor:pointer;z-index:5}
+  .tap.prev{left:0}
+  .tap.next{right:0;width:66%}
+
+  @media (prefers-reduced-motion:no-preference){
+    .slide.active{animation:in .32s cubic-bezier(.16,1,.3,1)}
+    @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  }
+
+  @media print{
+    @page{size:landscape;margin:0}
+    body{padding:0;gap:0;display:block}
+    .rail,.hint,.tap{display:none!important}
+    .stage{width:100vw;aspect-ratio:auto;height:100vh}
+    .slide{position:relative;display:flex!important;inset:auto;border:0;border-radius:0;box-shadow:none;height:100vh;page-break-after:always}
+  }
+</style>
+
+<main class="stage" id="stage">
+
+  <!-- ============ SLIDE 1 · PROBLEM ============ -->
+  <section class="slide active" id="s1">
+    <div class="eyebrow">01 · The problem</div>
+    <h1>The Kumbh doesn't have an information problem. It has a <span class="accent">coordination</span> problem.</h1>
+
+    <div class="body">
+      <svg class="flow" viewBox="0 0 1000 300" role="img" aria-label="Pilgrim to Volunteer to Help Desk and Departments to Control Room, with three broken links: language and incomplete reports, observations never structured or corroborated, and a response and dispatch gap between field and management.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#9c8d76"/>
+          </marker>
+        </defs>
+
+        <!-- nodes -->
+        <g font-family="IBM Plex Mono, monospace">
+          <g transform="translate(20,110)">
+            <rect width="180" height="80" rx="10" fill="#fffdf8" stroke="#c9b791"/>
+            <text x="90" y="38" text-anchor="middle" font-size="17" font-weight="600" fill="#241a12">Pilgrim</text>
+            <text x="90" y="60" text-anchor="middle" font-size="11.5" fill="#9c8d76">needs help</text>
+          </g>
+          <g transform="translate(300,110)">
+            <rect width="180" height="80" rx="10" fill="#fffdf8" stroke="#c9b791"/>
+            <text x="90" y="38" text-anchor="middle" font-size="17" font-weight="600" fill="#241a12">Volunteer</text>
+            <text x="90" y="60" text-anchor="middle" font-size="11.5" fill="#9c8d76">on the ground</text>
+          </g>
+          <g transform="translate(580,110)">
+            <rect width="180" height="80" rx="10" fill="#fffdf8" stroke="#c9b791"/>
+            <text x="90" y="34" text-anchor="middle" font-size="14.5" font-weight="600" fill="#241a12">Help Desk /</text>
+            <text x="90" y="53" text-anchor="middle" font-size="14.5" font-weight="600" fill="#241a12">Departments</text>
+          </g>
+          <g transform="translate(820,110)">
+            <rect width="160" height="80" rx="10" fill="#fffdf8" stroke="#c9b791"/>
+            <text x="80" y="34" text-anchor="middle" font-size="14.5" font-weight="600" fill="#241a12">Control</text>
+            <text x="80" y="53" text-anchor="middle" font-size="14.5" font-weight="600" fill="#241a12">Room</text>
+          </g>
+        </g>
+
+        <!-- broken connectors: short stubs with a jagged gap -->
+        <g stroke="#a8382a" stroke-width="2.5" fill="none">
+          <path d="M200,150 l34,0 m10,0 l16,0" marker-end="url(#ar)" opacity="0"/>
+          <path d="M200,150 l30,0 -10,-9 20,18 -10,-9 30,0" marker-end="url(#ar)"/>
+          <path d="M480,150 l30,0 -10,-9 20,18 -10,-9 30,0" marker-end="url(#ar)"/>
+          <path d="M760,150 l10,0 -10,-9 20,18 -10,-9 20,0" marker-end="url(#ar)"/>
+        </g>
+
+        <!-- gap captions -->
+        <g font-family="Inter, sans-serif" font-size="11.5" fill="#a8382a" text-anchor="middle">
+          <text x="250" y="214">language &amp;</text><text x="250" y="230">incomplete reports</text>
+          <text x="530" y="214">observations never</text><text x="530" y="230">structured / corroborated</text>
+          <text x="792" y="214">response &amp; dispatch gap,</text><text x="792" y="230">field &#8596; management</text>
+        </g>
+        <g stroke="#e5b7ab" stroke-width="1" stroke-dasharray="3 3">
+          <line x1="250" y1="176" x2="250" y2="196"/>
+          <line x1="530" y1="176" x2="530" y2="196"/>
+          <line x1="792" y1="176" x2="792" y2="196"/>
+        </g>
+      </svg>
+    </div>
+
+    <p class="kicker">Information exists across the mela — <strong>but it does not reliably become coordinated action.</strong></p>
+  </section>
+
+  <!-- ============ SLIDE 2 · SOLUTION ============ -->
+  <section class="slide dark" id="s2">
+    <div class="eyebrow">02 · The solution</div>
+    <h1>Kumbh Setu — the <span class="accent">field-to-control-room</span> response layer for mass gatherings.</h1>
+
+    <div class="body">
+      <svg class="flow" viewBox="0 0 1000 360" role="img" aria-label="A closed loop: Pilgrim to Volunteer with Setu AI to Ground Report to Corroboration to Kumbh Pulse, then Management to Dispatch to Resolution to Audit. Setu AI is the multilingual field companion, Kumbh Pulse gives explainable operational signals, and the response loop keeps every action human-approved.">
+        <defs>
+          <marker id="arg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#d9a441"/>
+          </marker>
+        </defs>
+
+        <!-- row 1 L->R -->
+        <g font-family="IBM Plex Mono, monospace" text-anchor="middle">
+          <g transform="translate(8,26)">
+            <rect width="176" height="64" rx="9" fill="#2a1e13" stroke="#4a3a28"/>
+            <text x="88" y="30" font-size="14" font-weight="600" fill="#fdf7ec">Pilgrim</text>
+            <text x="88" y="48" font-size="10" fill="#c9a35f">reports</text>
+          </g>
+          <g transform="translate(214,26)">
+            <rect width="176" height="64" rx="9" fill="#3a2a12" stroke="#d9a441"/>
+            <text x="88" y="27" font-size="12.5" font-weight="600" fill="#fdf7ec">Volunteer</text>
+            <text x="88" y="45" font-size="11" font-weight="600" fill="#f0d9a8">+ Setu AI</text>
+          </g>
+          <g transform="translate(420,26)">
+            <rect width="176" height="64" rx="9" fill="#2a1e13" stroke="#4a3a28"/>
+            <text x="88" y="30" font-size="12.5" font-weight="600" fill="#fdf7ec">Ground Report</text>
+            <text x="88" y="48" font-size="10" fill="#c9a35f">structured</text>
+          </g>
+          <g transform="translate(626,26)">
+            <rect width="176" height="64" rx="9" fill="#2a1e13" stroke="#4a3a28"/>
+            <text x="88" y="30" font-size="12.5" font-weight="600" fill="#fdf7ec">Corroboration</text>
+            <text x="88" y="48" font-size="10" fill="#c9a35f">2+ independent</text>
+          </g>
+          <g transform="translate(832,26)">
+            <rect width="160" height="64" rx="9" fill="#3a2a12" stroke="#d9a441"/>
+            <text x="80" y="30" font-size="12.5" font-weight="600" fill="#fdf7ec">Kumbh Pulse</text>
+            <text x="80" y="48" font-size="10" fill="#f0d9a8">signal</text>
+          </g>
+        </g>
+        <g stroke="#d9a441" stroke-width="2" fill="none">
+          <line x1="184" y1="58" x2="206" y2="58" marker-end="url(#arg)"/>
+          <line x1="390" y1="58" x2="412" y2="58" marker-end="url(#arg)"/>
+          <line x1="596" y1="58" x2="618" y2="58" marker-end="url(#arg)"/>
+          <line x1="802" y1="58" x2="824" y2="58" marker-end="url(#arg)"/>
+          <!-- wrap down -->
+          <path d="M912,90 v50 h-864 v52" marker-end="url(#arg)"/>
+        </g>
+
+        <!-- row 2 L->R (Management ... Audit) -->
+        <g font-family="IBM Plex Mono, monospace" text-anchor="middle">
+          <g transform="translate(8,192)">
+            <rect width="176" height="64" rx="9" fill="#3a2a12" stroke="#d9a441"/>
+            <text x="88" y="30" font-size="13" font-weight="600" fill="#fdf7ec">Management</text>
+            <text x="88" y="48" font-size="10" fill="#f0d9a8">decides</text>
+          </g>
+          <g transform="translate(214,192)">
+            <rect width="176" height="64" rx="9" fill="#2a1e13" stroke="#4a3a28"/>
+            <text x="88" y="30" font-size="13" font-weight="600" fill="#fdf7ec">Dispatch</text>
+            <text x="88" y="48" font-size="10" fill="#c9a35f">human-approved</text>
+          </g>
+          <g transform="translate(420,192)">
+            <rect width="176" height="64" rx="9" fill="#2a1e13" stroke="#4a3a28"/>
+            <text x="88" y="34" font-size="13" font-weight="600" fill="#fdf7ec">Resolution</text>
+          </g>
+          <g transform="translate(626,192)">
+            <rect width="176" height="64" rx="9" fill="#2a1e13" stroke="#4a3a28"/>
+            <text x="88" y="34" font-size="13" font-weight="600" fill="#fdf7ec">Audit</text>
+          </g>
+        </g>
+        <g stroke="#d9a441" stroke-width="2" fill="none">
+          <line x1="184" y1="224" x2="206" y2="224" marker-end="url(#arg)"/>
+          <line x1="390" y1="224" x2="412" y2="224" marker-end="url(#arg)"/>
+          <line x1="596" y1="224" x2="618" y2="224" marker-end="url(#arg)"/>
+        </g>
+
+        <!-- callouts -->
+        <g font-family="Inter, sans-serif" font-size="11" fill="#f0d9a8" text-anchor="middle">
+          <text x="302" y="112">multilingual field companion</text>
+          <text x="912" y="112">explainable operational signals</text>
+          <text x="302" y="300">every action human-approved</text>
+        </g>
+        <g stroke="#7a5a2a" stroke-width="1" stroke-dasharray="3 3">
+          <line x1="302" y1="94" x2="302" y2="104"/>
+          <line x1="912" y1="94" x2="912" y2="104"/>
+          <line x1="302" y1="260" x2="302" y2="290"/>
+        </g>
+      </svg>
+    </div>
+
+    <p class="kicker"><strong>Setu AI</strong> helps people understand and act. <strong>Kumbh Pulse</strong> helps the control room understand what is happening. Prototype runs on synthetic / simulation data.</p>
+  </section>
+
+  <!-- ============ SLIDE 3 · VALIDATION + FUTURE ============ -->
+  <section class="slide" id="s3">
+    <div class="eyebrow">03 · Validation &amp; what's next</div>
+    <h1>Validated on the bench. <span class="accent">Ready for the field.</span></h1>
+
+    <div class="cols">
+      <div>
+        <div class="col-h">Demonstrated in the prototype</div>
+        <ul class="checks">
+          <li><span class="tick"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.5 3.5L13 4"/></svg></span><span><b>41 / 41</b> AI evaluation cases passed</span></li>
+          <li><span class="tick"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.5 3.5L13 4"/></svg></span><span>Multilingual translation, live in the flow</span></li>
+          <li><span class="tick"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.5 3.5L13 4"/></svg></span><span>Complete incident lifecycle, report &#8594; resolution</span></li>
+          <li><span class="tick"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.5 3.5L13 4"/></svg></span><span>Ground-report corroboration before escalation</span></li>
+          <li><span class="tick"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.5 3.5L13 4"/></svg></span><span>Explainable Kumbh Pulse signals (model <b>pulse-rule-v0.3</b>)</span></li>
+          <li><span class="tick"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.5 3.5L13 4"/></svg></span><span>Human confirmation on every high-impact action</span></li>
+          <li><span class="tick"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.5 3.5L13 4"/></svg></span><span>Role-separated Pilgrim / Volunteer / Management workflows</span></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="col-h">Next: a controlled pilot</div>
+        <div class="pilot">
+          <div class="big">10&#8211;50 volunteers · 1&#8211;2 zones</div>
+          <div class="sub">One zone, one workflow, measured end to end.</div>
+          <div class="metrics">
+            <span>report creation time</span>
+            <span>translation turnaround</span>
+            <span>report &#8594; acknowledgement</span>
+            <span>dispatch time</span>
+            <span>resolution completion</span>
+            <span>duplicate reports</span>
+            <span>AI errors / abstention</span>
+          </div>
+        </div>
+        <div class="synthnote">Current prototype uses synthetic / simulation data. Field validation is the next step.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 4 · ASK ============ -->
+  <section class="slide" id="s4">
+    <div class="eyebrow">04 · The ask</div>
+    <h1>What we need from <span class="accent">Kumbhathon</span>.</h1>
+
+    <div class="asks">
+      <div class="ask">
+        <span class="n">01</span>
+        <span class="t">Field access</span>
+        <span class="d">Volunteers and a live zone to observe the real reporting flow.</span>
+      </div>
+      <div class="ask">
+        <span class="n">02</span>
+        <span class="t">Approved data access</span>
+        <span class="d">Anonymized / approved feeds, including relevant Nashik Monitor signals.</span>
+      </div>
+      <div class="ask">
+        <span class="n">03</span>
+        <span class="t">Stakeholder validation</span>
+        <span class="d">Time with departments and control-room staff to pressure-test the workflow.</span>
+      </div>
+      <div class="ask">
+        <span class="n">04</span>
+        <span class="t">A pilot pathway</span>
+        <span class="d">One zone, one workflow, a measurable path to a controlled pilot.</span>
+      </div>
+    </div>
+
+    <p class="close">Give us the opportunity to validate Kumbh Setu in the field — not just on a laptop.</p>
+  </section>
+
+  <div class="tap prev" data-dir="-1" aria-hidden="true"></div>
+  <div class="tap next" data-dir="1" aria-hidden="true"></div>
+</main>
+
+<nav class="rail" aria-label="Slides">
+  <span class="brand">Kumbh Setu</span>
+  <span>· Kumbhathon S.P.R.I.N.T. 2026</span>
+  <div class="dots" role="tablist">
+    <button type="button" data-go="0" aria-current="true">01 Problem</button>
+    <button type="button" data-go="1">02 Solution</button>
+    <button type="button" data-go="2">03 Validation</button>
+    <button type="button" data-go="3">04 Ask</button>
+  </div>
+</nav>
+
+<p class="hint">&#8592; &#8594; or click left / right &nbsp;·&nbsp; &#8984;P prints 4 pages</p>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var dots = Array.prototype.slice.call(document.querySelectorAll(".dots button"));
+  var i = 0;
+  function show(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function(s, k){ s.classList.toggle("active", k === i); });
+    dots.forEach(function(d, k){ d.setAttribute("aria-current", k === i ? "true" : "false"); });
+  }
+  document.addEventListener("keydown", function(e){
+    if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { show(i + 1); e.preventDefault(); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { show(i - 1); e.preventDefault(); }
+    else if (e.key === "Home") { show(0); }
+    else if (e.key === "End") { show(slides.length - 1); }
+  });
+  document.querySelectorAll(".tap").forEach(function(t){
+    t.addEventListener("click", function(){ show(i + Number(t.dataset.dir)); });
+  });
+  dots.forEach(function(d){ d.addEventListener("click", function(){ show(Number(d.dataset.go)); }); });
+</script>
