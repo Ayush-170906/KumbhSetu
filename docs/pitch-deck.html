@@ -203,10 +203,12 @@
 
   @media print{
     @page{size:landscape;margin:0}
-    body{padding:0;gap:0;display:block}
+    html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{padding:0;gap:0;display:block;background:#fff}
     .rail,.hint,.tap{display:none!important}
     .stage{width:100vw;aspect-ratio:auto;height:100vh}
-    .slide{position:relative;display:flex!important;inset:auto;border:0;border-radius:0;box-shadow:none;height:100vh;page-break-after:always}
+    .slide{position:relative;display:flex!important;inset:auto;border:0;border-radius:0;box-shadow:none;height:100vh;break-after:page;animation:none!important}
+    .slide:last-of-type{break-after:auto}
   }
 </style>
 
