@@ -1,15 +1,12 @@
 import { ClientOnly } from "@/components/ui/ClientOnly";
 import { AuthGate } from "@/components/auth/AuthGate";
 import PilgrimApp from "@/components/pilgrim/PilgrimApp";
+import { RouteLoading } from "@/components/ui/RouteLoading";
 
 export default function PilgrimPage() {
   return (
     <ClientOnly
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-ivory text-ink-muted text-sm">
-          Loading Kumbh Setu…
-        </div>
-      }
+      fallback={<RouteLoading title="Opening pilgrim companion" detail="Preparing language and assistance options…" />}
     >
       <AuthGate area="pilgrim">
         <PilgrimApp />

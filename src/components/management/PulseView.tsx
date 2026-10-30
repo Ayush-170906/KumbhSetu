@@ -32,7 +32,7 @@ export function PulseView({
         <div>
           <h2 className="font-editorial text-xl text-ink">Kumbh Pulse</h2>
           <p className="text-xs text-ink-muted mt-0.5">
-            Explainable, rule-based crowd-risk intelligence — Stage 0 of a staged model progression.
+            Illustrative rule score over synthetic inputs — not a live crowd assessment or forecast.
           </p>
         </div>
         <SimTag label="SYNTHETIC SIGNALS" />
@@ -85,8 +85,7 @@ export function PulseView({
           <strong className="text-ink">How to read this:</strong> Kumbh Pulse produces a 0–100 score from a small,
           inspectable set of signals — it never presents a single opaque number. Green means normal monitoring. Yellow
           means elevated attention and preventive readiness. Red means a prominent alert requiring human review. The
-          model version and confidence are always shown alongside the score, and a human operator can override any
-          recommendation at any time. This build uses rule-based scoring (Stage 0) over synthetic/test signals — it is
+          demo model version is shown alongside the score. This build uses rule-based scoring over synthetic/test signals — it is
           decision support, not a certified safety determination.
         </p>
       </Panel>

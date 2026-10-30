@@ -4,12 +4,11 @@ import { getSnanBriefing, CLUSTER_LABEL } from "@/lib/snanCalendar";
 import { Icon } from "@/components/ui/Icon";
 
 /**
- * "Where is the holy dip today?" — a shared banner driven by the snan calendar.
- * Shows today's principal bathing day if there is one, otherwise counts down to
- * the next. Used on the pilgrim home and the Common Operations Board.
+ * Illustrative schedule excerpt. It must not be presented as a current or
+ * authority-issued bathing schedule.
  */
 export function SnanBanner({ className = "" }: { className?: string }) {
-  const b = getSnanBriefing(); // demo "today" sits inside the Simhastha window
+  const b = getSnanBriefing();
   const day = b.today;
 
   return (
@@ -33,11 +32,11 @@ export function SnanBanner({ className = "" }: { className?: string }) {
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-dark">
-                Holy dip today
+                Illustrative schedule · {day.date}
               </span>
               {day.peak && (
                 <span className="text-[9px] uppercase tracking-wide bg-status-red text-white rounded-sm px-1 py-px">
-                  Peak day
+                  Sample peak-day label
                 </span>
               )}
             </div>
@@ -45,26 +44,23 @@ export function SnanBanner({ className = "" }: { className?: string }) {
             <div className="text-[11px] text-ink-muted mt-0.5">
               {day.sects} · {day.site}
             </div>
-            <div className="text-[11px] text-ink-soft mt-1 leading-snug">{day.guidance}</div>
+            <div className="text-[11px] text-ink-soft mt-1 leading-snug">Illustrative scenario entry; verify official dates and operating guidance.</div>
             {b.next && (
               <div className="text-[11px] text-ink-soft mt-1">
-                Next: {b.next.name}{" "}
-                {b.daysToNext === 1 ? "tomorrow" : `in ${b.daysToNext} days`} ·{" "}
-                {CLUSTER_LABEL[b.next.cluster]}
+                Next sample date: {b.next.date} · {b.next.name} · {CLUSTER_LABEL[b.next.cluster]}
               </div>
             )}
           </div>
         ) : (
           <div className="min-w-0">
             <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink-soft">
-              Next holy dip
+              Next sample schedule entry
             </div>
             {b.next ? (
               <>
                 <div className="text-sm font-semibold text-ink mt-0.5">{b.next.name}</div>
                 <div className="text-[11px] text-ink-muted mt-0.5">
-                  {b.daysToNext === 1 ? "Tomorrow" : `In ${b.daysToNext} days`} ·{" "}
-                  {b.next.sects} · {b.next.site}
+                  {b.next.date} · {b.next.sects} · {b.next.site}
                 </div>
               </>
             ) : (

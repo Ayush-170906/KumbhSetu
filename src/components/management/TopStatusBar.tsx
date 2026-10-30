@@ -33,7 +33,7 @@ export function TopStatusBar({
   const time = useClock();
 
   return (
-    <header className="h-14 shrink-0 border-b border-border bg-surface flex items-center px-4 gap-5 text-xs">
+    <header className="min-h-14 shrink-0 border-b border-border bg-surface flex flex-wrap items-center px-3 sm:px-4 py-2 gap-x-3 gap-y-2 lg:h-14 lg:flex-nowrap lg:gap-2 lg:px-2 lg:py-0 2xl:gap-5 2xl:px-4 text-xs">
       <Link href="/" className="flex items-center gap-2 pr-4 border-r border-border h-full shrink-0">
         <div className="h-7 w-7 rounded-sm bg-secondary flex items-center justify-center">
           <Icon name="management" className="h-4 w-4 text-white" />
@@ -55,7 +55,7 @@ export function TopStatusBar({
       <StatItem label="Volunteers Available" value={String(volunteersAvailable)} tone="green" />
       <StatItem label="Zones At Risk" value={String(zonesAtRisk)} tone={zonesAtRisk > 0 ? "yellow" : "green"} />
 
-      <div className="ml-auto flex items-center gap-4 shrink-0">
+      <div className="ml-auto flex items-center gap-2 shrink-0 2xl:gap-4">
         <Link
           href="/board"
           className="hidden sm:inline-flex items-center gap-1.5 text-ink-muted font-medium hover:text-ink"
@@ -68,7 +68,7 @@ export function TopStatusBar({
           className="hidden sm:inline-flex items-center gap-1.5 text-primary font-medium hover:text-primary-dark"
         >
           <Icon name="target" className="h-3.5 w-3.5" />
-          Run Live Demo
+          Run guided demo
         </Link>
         <div className="text-right leading-tight">
           <div className="text-[9.5px] uppercase tracking-wide text-ink-soft">Operations Manager</div>

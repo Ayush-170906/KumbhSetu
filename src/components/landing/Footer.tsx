@@ -12,7 +12,7 @@ export function Footer() {
             represent, any government or Kumbh Mela administrative authority.
           </p>
         </div>
-        <div className="flex gap-6 text-xs text-ink-muted">
+        <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-ink-muted">
           <Link href="/pilgrim" className="hover:text-ink">Pilgrim</Link>
           <Link href="/field" className="hover:text-ink">Volunteer</Link>
           <Link href="/management" className="hover:text-ink">Management</Link>

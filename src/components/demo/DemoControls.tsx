@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { SyntheticTag } from "./DemoShared";
-import { demoStep } from "@/lib/demoScript";
+import { DEMO_SCENARIOS, demoStep, type DemoScenario } from "@/lib/demoScript";
 
 export function DemoControls({
   running,
@@ -11,6 +11,8 @@ export function DemoControls({
   completed,
   stepIndex,
   totalSteps,
+  scenario,
+  onScenarioChange,
   onStart,
   onPause,
   onResume,
@@ -23,6 +25,8 @@ export function DemoControls({
   completed: boolean;
   stepIndex: number;
   totalSteps: number;
+  scenario: DemoScenario;
+  onScenarioChange: (scenario: DemoScenario) => void;
   onStart: () => void;
   onPause: () => void;
   onResume: () => void;
@@ -32,7 +36,7 @@ export function DemoControls({
 }) {
   const started = running || completed;
   const shown = Math.min(Math.max(stepIndex, 1), totalSteps);
-  const meta = demoStep(shown);
+  const meta = demoStep(shown, scenario);
   const pct = completed ? 100 : Math.min(100, (stepIndex / totalSteps) * 100);
 
   return (
@@ -47,17 +51,30 @@ export function DemoControls({
               Kumbh Setu — From Ground Observation to Coordinated Response
             </div>
             <div className="truncate text-[11px] text-ink-soft">
-              One scripted incident, driving Pilgrim · Volunteer · Management together
+              {DEMO_SCENARIOS[scenario].title} · Pilgrim → Control room → Volunteer
             </div>
           </div>
         </div>
 
         <SyntheticTag />
 
+        <label className="flex items-center gap-1.5 text-[11px] text-ink-muted">
+          <span className="sr-only">Demo scenario</span>
+          <select
+            value={scenario}
+            onChange={(event) => onScenarioChange(event.target.value as DemoScenario)}
+            className="h-8 max-w-40 border border-border bg-surface px-2 text-xs text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            {(Object.entries(DEMO_SCENARIOS) as [DemoScenario, (typeof DEMO_SCENARIOS)[DemoScenario]][]).map(([id, item]) => (
+              <option key={id} value={id}>{item.title}</option>
+            ))}
+          </select>
+        </label>
+
         <div className="ml-auto flex items-center gap-2">
           {!started && (
             <Button onClick={onStart}>
-              <Icon name="navigation" className="h-4 w-4" /> Run Live Demo
+              <Icon name="navigation" className="h-4 w-4" /> Run scenario
             </Button>
           )}
 

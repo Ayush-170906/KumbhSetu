@@ -438,8 +438,8 @@ export const TOOLS: ToolDef[] = [
         ok: true,
         createdId: report.id,
         summary: ctx.offline
-          ? `Saved ${report.code} locally — it will sync when you're back online.`
-          : `Field report ${report.code} submitted to the control room.`,
+          ? `Saved ${report.code} in this browser's local prototype — it has not been sent.`
+          : `Sample field report ${report.code} saved in this browser's prototype.`,
         data: { report },
       };
     },
@@ -484,7 +484,7 @@ export const TOOLS: ToolDef[] = [
     riskClass: "high_write",
     authorize: (ctx) => isVolunteer(ctx),
     describe: (a) =>
-      `Create a ${str(a.severity) ?? "moderate"} ${str(a.type) ?? "incident"} in ${str(a.zoneId) ?? "this zone"} — this pages the nearest volunteer and the control room`,
+      `Create a ${str(a.severity) ?? "moderate"} ${str(a.type) ?? "incident"} in ${str(a.zoneId) ?? "this zone"} in the local browser prototype`,
     validate: (a, ctx) => {
       const errors: string[] = [];
       const type = str(a.type);
@@ -538,7 +538,7 @@ export const TOOLS: ToolDef[] = [
     name: "escalate_incident",
     riskClass: "high_write",
     authorize: (ctx) => isVolunteer(ctx),
-    describe: (a) => `Escalate ${str(a.code) ?? str(a.incidentId) ?? "the incident"} to the control room`,
+    describe: (a) => `Mark ${str(a.code) ?? str(a.incidentId) ?? "the incident"} escalated in the local prototype`,
     validate: (a) => {
       const has = Boolean(str(a.incidentId) || str(a.code));
       return { ok: has, errors: has ? [] : ["provide incidentId or code"], value: { incidentId: str(a.incidentId), code: str(a.code) } };
@@ -556,7 +556,7 @@ export const TOOLS: ToolDef[] = [
       }
       return {
         ok: true,
-        summary: `${inc.code} escalated — the control room is notified and the case stays open.`,
+        summary: `Sample incident ${inc.code} marked escalated in this browser's prototype. No authority was notified.`,
         data: { incidentId: inc.id },
         audit: { action: "INCIDENT_ESCALATED_VIA_SETU", entity: "incident", entityId: inc.id },
       };

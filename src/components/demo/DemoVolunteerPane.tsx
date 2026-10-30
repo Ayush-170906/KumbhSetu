@@ -105,7 +105,7 @@ export function DemoVolunteerPane({
                   </div>
                   <ProposedAction
                     tool="File ground report"
-                    prompt="File this as a lost-child ground report for Ghat 4 and send it to the control room?"
+                  prompt="Add this sample lost-child report to the local management demo view?"
                     state={stepIndex >= 6 ? "confirmed" : "pending"}
                   />
                 </div>
@@ -113,7 +113,7 @@ export function DemoVolunteerPane({
 
               {/* Step 6 — first report filed */}
               {stepIndex >= 6 && reportOne && (
-                <FiledCard code={reportOne.code} label="First report submitted to the control room" />
+                <FiledCard code={reportOne.code} label="Sample report added to the local management demo" />
               )}
 
               {/* Step 7 — second volunteer, independent report */}
@@ -135,7 +135,7 @@ export function DemoVolunteerPane({
 
               {/* Step 8 — second report filed */}
               {stepIndex >= 8 && reportTwo && (
-                <FiledCard code={reportTwo.code} label="Second report submitted — control room now has two" />
+                <FiledCard code={reportTwo.code} label="Second sample report added to the local management demo" />
               )}
 
               {/* Steps 9–15 — waiting for the control room */}

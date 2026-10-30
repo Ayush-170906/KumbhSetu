@@ -8,6 +8,13 @@
 // touch.
 
 export type DemoPanel = "intro" | "pilgrim" | "volunteer" | "management" | "outro";
+export type DemoScenario = "missing" | "medical" | "crowd";
+
+export const DEMO_SCENARIOS: Record<DemoScenario, { title: string; description: string; icon: "lost" | "medical" | "warning" }> = {
+  medical: { title: "Medical emergency", description: "Urgent pilgrim SOS routed to an available field responder.", icon: "medical" },
+  missing: { title: "Missing person", description: "Two field reports corroborate a missing child before dispatch.", icon: "lost" },
+  crowd: { title: "Crowd congestion", description: "A congestion report is triaged and handled as a field response.", icon: "warning" },
+};
 
 export interface DemoStepMeta {
   /** 1-based step number shown to the audience ("DEMO 03 / 20"). */
@@ -191,11 +198,28 @@ export const DEMO_STEPS: DemoStepMeta[] = [
   },
 ];
 
+/** Compact end-to-end workflows for the alternate incident scenarios. */
+export const OPERATIONAL_DEMO_STEPS: DemoStepMeta[] = [
+  { n: 1, clock: "0:00", panel: "intro", title: "Select a synthetic scenario", narration: "Operational scenario started. All data is synthetic.", durationMs: 3000 },
+  { n: 2, clock: "0:10", panel: "pilgrim", title: "Pilgrim submits a report", narration: "A synthetic report is created through the application incident action.", durationMs: 7000 },
+  { n: 3, clock: "0:25", panel: "management", title: "Control room triages the incident", narration: "The control room triages the reported incident.", durationMs: 7000 },
+  { n: 4, clock: "0:40", panel: "management", title: "A responder is assigned", narration: "The dispatch action selects an available volunteer and creates a task.", durationMs: 7000 },
+  { n: 5, clock: "0:55", panel: "volunteer", title: "Volunteer acknowledges", narration: "The assigned volunteer accepts the task.", durationMs: 7000 },
+  { n: 6, clock: "1:10", panel: "volunteer", title: "Field response begins", narration: "The volunteer records arrival and the incident moves to responding.", durationMs: 7000 },
+  { n: 7, clock: "1:25", panel: "volunteer", title: "Incident resolved", narration: "The volunteer resolves the task; the management timeline reflects the change.", durationMs: 7000 },
+  { n: 8, clock: "1:40", panel: "outro", title: "Response loop complete", narration: "The incident, task and timeline share one application state.", durationMs: 5000 },
+];
+
 export const DEMO_TOTAL = DEMO_STEPS.length;
 
+export function demoSteps(scenario: DemoScenario): DemoStepMeta[] {
+  return scenario === "missing" ? DEMO_STEPS : OPERATIONAL_DEMO_STEPS;
+}
+
 /** Returns the meta for a 1-based step number, clamped. */
-export function demoStep(n: number): DemoStepMeta {
-  return DEMO_STEPS[Math.max(0, Math.min(DEMO_STEPS.length - 1, n - 1))];
+export function demoStep(n: number, scenario: DemoScenario = "missing"): DemoStepMeta {
+  const steps = demoSteps(scenario);
+  return steps[Math.max(0, Math.min(steps.length - 1, n - 1))];
 }
 
 // ---------------------------------------------------------------------------
@@ -212,7 +236,14 @@ export const RESPONSE_LOOP: { key: string; label: string; blurb: string }[] = [
 ];
 
 /** Which loop stage each step lights up (index into RESPONSE_LOOP), or -1. */
-export function loopStageForStep(n: number): number {
+export function loopStageForStep(n: number, scenario: DemoScenario = "missing"): number {
+  if (scenario !== "missing") {
+    if (n <= 2) return 0;
+    if (n === 3) return 3;
+    if (n <= 6) return 4;
+    if (n === 7) return 5;
+    return -1;
+  }
   if (n <= 1) return -1;
   if (n <= 8) return 0; // observe
   if (n <= 10) return 1; // corroborate

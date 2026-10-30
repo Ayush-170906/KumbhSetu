@@ -94,7 +94,7 @@ const SCHEMAS: Record<string, OpenAIToolSchema> = {
   ),
   create_incident: S(
     "create_incident",
-    "Create a dispatchable incident. HIGH RISK — pages the nearest volunteer and the control room. Requires human confirmation.",
+    "Create a local prototype incident in this browser. This does not page responders or contact an authority. Requires human confirmation.",
     {
       type: enumStr(["medical", "lost_person", "crowd_pressure", "security", "facility", "other"]),
       severity: enumStr(["low", "moderate", "critical"]),

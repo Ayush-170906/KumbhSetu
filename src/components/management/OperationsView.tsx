@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Zone, Facility, Volunteer, Incident, RiskSnapshot } from "@/lib/types";
+import type { Zone, Facility, Volunteer, Incident, IncidentStatus, IncidentType, RiskSnapshot } from "@/lib/types";
 import { useAppStore } from "@/store/useAppStore";
 import { OperationalMap } from "@/components/maps/OperationalMap";
 import { RealMapView } from "@/components/maps/RealMapView";
@@ -31,22 +31,35 @@ export function OperationsView({
   onIncidentClick: (id: string) => void;
 }) {
   const [mapMode, setMapMode] = useState<"abstract" | "gis">("abstract");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<IncidentStatus | "all">("all");
+  const [typeFilter, setTypeFilter] = useState<IncidentType | "all">("all");
   const emergingSignals = useAppStore((s) => s.emergingSignals);
   const groundReports = useAppStore((s) => s.groundReports);
   const promoteReportToIncident = useAppStore((s) => s.promoteReportToIncident);
 
+  const priority = { critical: 0, moderate: 1, low: 2 } as const;
   const activeIncidents = [...incidents]
     .filter((i) => !["resolved", "cancelled"].includes(i.status))
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort((a, b) => priority[a.severity] - priority[b.severity] || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const visibleIncidents = activeIncidents.filter((incident) => {
+    const zone = zones.find((z) => z.id === incident.zoneId);
+    const query = search.trim().toLowerCase();
+    const matchesSearch = !query || [incident.code, incident.summary, incident.assignedVolunteerId, zone?.name, zone?.shortName]
+      .some((value) => value?.toLowerCase().includes(query));
+    return matchesSearch && (statusFilter === "all" || incident.status === statusFilter) &&
+      (typeFilter === "all" || incident.type === typeFilter);
+  });
 
   const topRiskZone = [...zones].sort((a, b) => b.riskScore - a.riskScore)[0];
 
   return (
-    <div className="flex flex-1 min-h-0">
-      <div className="flex-1 min-w-0 flex flex-col p-4 gap-3">
+    <div className="flex flex-1 min-h-0 flex-col lg:flex-row">
+      <div className="flex-1 min-w-0 min-h-[42vh] lg:min-h-0 flex flex-col p-3 sm:p-4 gap-3">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-ink">Live Operational Map</h2>
+            <h2 className="text-sm font-semibold text-ink">Operational Map · Demo</h2>
             <p className="text-xs text-ink-muted">
               {mapMode === "abstract"
                 ? "Zones, facilities, volunteers and active incidents — simulated layout."
@@ -92,7 +105,7 @@ export function OperationsView({
         <MapLegend />
       </div>
 
-      <aside className="w-96 shrink-0 border-l border-border bg-surface flex flex-col min-h-0">
+      <aside className="w-full shrink-0 max-h-[36vh] border-t border-border bg-surface flex flex-col min-h-0 lg:max-h-none lg:w-96 lg:border-l lg:border-t-0">
         <div className="p-4 border-b border-border">
           {riskSnapshots[topRiskZone.id] && <PulsePanel zone={topRiskZone} snapshot={riskSnapshots[topRiskZone.id]} compact />}
         </div>
@@ -110,14 +123,39 @@ export function OperationsView({
             </div>
           )}
           <div>
-            <PanelHeader title={`Active Incidents (${activeIncidents.length})`} />
+            <PanelHeader title="Incident queue" subtitle={`${visibleIncidents.length} of ${activeIncidents.length} active · Critical first`} />
+            <div className="mb-2 grid grid-cols-2 gap-2">
+              <label className="col-span-2">
+                <span className="sr-only">Search incidents</span>
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search ID, location, responder…"
+                  className="h-9 w-full rounded-sm border border-border bg-surface px-2.5 text-xs text-ink placeholder:text-ink-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                />
+              </label>
+              <label>
+                <span className="sr-only">Filter by status</span>
+                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as IncidentStatus | "all")} className="h-9 w-full rounded-sm border border-border bg-surface px-2 text-xs text-ink">
+                  <option value="all">All active statuses</option>
+                  {(["reported", "triaged", "dispatched", "acknowledged", "responding", "escalated"] as IncidentStatus[]).map((status) => <option key={status} value={status}>{status.replace("_", " ")}</option>)}
+                </select>
+              </label>
+              <label>
+                <span className="sr-only">Filter by incident type</span>
+                <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value as IncidentType | "all")} className="h-9 w-full rounded-sm border border-border bg-surface px-2 text-xs text-ink">
+                  <option value="all">All incident types</option>
+                  {(["medical", "lost_person", "crowd_pressure", "security", "facility", "other"] as IncidentType[]).map((type) => <option key={type} value={type}>{type.replaceAll("_", " ")}</option>)}
+                </select>
+              </label>
+            </div>
             <div className="space-y-2">
-              {activeIncidents.length === 0 && (
+              {visibleIncidents.length === 0 && (
                 <p className="text-xs text-ink-soft border border-dashed border-border rounded-sm p-3">
-                  No active incidents. New SOS reports from the Pilgrim app will appear here immediately.
+                  {activeIncidents.length === 0 ? "No active incidents. New SOS reports will appear here." : "No incidents match these filters. Adjust your search or filters."}
                 </p>
               )}
-              {activeIncidents.map((inc) => (
+              {visibleIncidents.map((inc) => (
                 <IncidentCard
                   key={inc.id}
                   incident={inc}

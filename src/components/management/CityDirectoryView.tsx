@@ -13,10 +13,8 @@ import { Icon } from "@/components/ui/Icon";
 import { SimTag } from "@/components/ui/SimTag";
 
 /**
- * The real Nashik–Trimbakeshwar infrastructure directory (Nashik Monitor open
- * data). A control-room reference layer — hospitals, police, toilets, ghats,
- * holding areas, transport hubs, accommodation. Not wired into the simulated
- * dispatch system; it's ground reference the operator can search.
+ * Nashik-area reference records compiled by Nashik Monitor. Not a verified
+ * inventory and not wired into the simulated dispatch system.
  */
 export function CityDirectoryView() {
   const [group, setGroup] = useState<DirectoryGroup>("medical");
@@ -29,15 +27,19 @@ export function CityDirectoryView() {
     <div className="p-6 max-w-5xl">
       <div className="flex items-start justify-between gap-3 mb-1">
         <div>
-          <h2 className="font-editorial text-xl text-ink">City Directory</h2>
+          <h2 className="font-editorial text-xl text-ink">Place directory</h2>
           <p className="text-xs text-ink-muted mt-0.5">
-            Real Nashik–Trimbakeshwar infrastructure — {NASHIK_DIRECTORY.count.toLocaleString()} places across{" "}
+            Nashik-area reference records — {NASHIK_DIRECTORY.count.toLocaleString()} entries across{" "}
             {NASHIK_DIRECTORY.datasets.length} datasets.
           </p>
         </div>
-        <SimTag label="REAL OPEN DATA" />
+        <SimTag label="REFERENCE ONLY" />
       </div>
-      <p className="text-[10px] text-ink-soft mb-4">Source: {NASHIK_DIRECTORY.source}</p>
+      <p className="text-[10px] text-ink-soft mb-2">Source: {NASHIK_DIRECTORY.source}</p>
+      <div className="mb-4 border-l-2 border-status-amber bg-status-amber-bg/50 px-3 py-2 text-xs text-ink-muted">
+        Source age, coverage and coordinate precision vary. This is not a live availability or capacity feed. Verify any facility and contact directly before operational use. Data licensing for the compiled records has not been independently confirmed.
+        <a className="ml-1 underline underline-offset-2" href="https://github.com/tanmayk1234/nashik-monitor-v2" target="_blank" rel="noreferrer">Source notes</a>
+      </div>
 
       <div className="flex flex-wrap gap-1.5 mb-3">
         {GROUP_ORDER.map((g) => (

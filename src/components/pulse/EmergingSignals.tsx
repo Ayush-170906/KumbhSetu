@@ -1,7 +1,6 @@
 "use client";
 
 import type { EmergingSignal, GroundReport, Zone } from "@/lib/types";
-import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Icon } from "@/components/ui/Icon";
 import { SimTag } from "@/components/ui/SimTag";
 import { Button } from "@/components/ui/Button";
@@ -58,13 +57,8 @@ export function EmergingSignals({
                   {zone?.name ?? s.zoneId} · first seen {formatRelative(s.firstSeenAt)}
                 </div>
               </div>
-              <div className="text-right shrink-0">
-                <div className="text-[10px] uppercase tracking-wide text-ink-soft">Confidence</div>
-                <div className="text-sm font-mono-num font-semibold text-ink">{Math.round(s.confidence * 100)}%</div>
-              </div>
+              <SimTag label="SAMPLE SIGNAL" />
             </div>
-
-            <ProgressBar percent={s.confidence * 100} tone="yellow" className="mt-2" />
 
             <div className="mt-2 text-[11px] text-ink-muted">
               <span className="font-medium text-ink">Signals:</span> {s.reportIds.length} volunteer report

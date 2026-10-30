@@ -1,6 +1,6 @@
 // Normalize the Nashik Monitor GeoJSON datasets into one compact directory JSON
 // the Management "City Directory" view loads.
-import { readFileSync, writeFileSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const SRC = "C:\\Users\\ASUS\\OneDrive\\Desktop\\KumbhSetu\\data\\nashik-monitor";

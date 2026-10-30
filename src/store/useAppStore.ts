@@ -59,12 +59,13 @@ import {
   recomputeZoneRisk,
   nextSequentialCode,
   requiredSkillFor,
-  textMatchScore,
 } from "@/lib/dispatch";
-import { loadPersistedState, initPersistence } from "./persist";
+import { loadPersistedState, extractPersistableData, initPersistence } from "./persist";
 import {
-  DEMO_TOTAL,
+  DEMO_SCENARIOS,
+  demoSteps,
   demoStep,
+  type DemoScenario,
   VOL_REPORT_SUMMARY,
   VOL2_REPORT_SUMMARY,
 } from "@/lib/demoScript";
@@ -171,6 +172,8 @@ interface DemoState {
   /** 0 = not started; 1..totalSteps = the current scripted beat. */
   stepIndex: number;
   totalSteps: number;
+  scenario: DemoScenario;
+  isolationActive: boolean;
   log: DemoLogEntry[];
   activeIncidentId?: string;
   activeTaskId?: string;
@@ -178,12 +181,14 @@ interface DemoState {
   reportTwoId?: string;
 }
 
-const emptyDemoState = (): DemoState => ({
+const emptyDemoState = (scenario: DemoScenario = "missing", isolationActive = false): DemoState => ({
   running: false,
   paused: false,
   completed: false,
   stepIndex: 0,
-  totalSteps: DEMO_TOTAL,
+  totalSteps: demoSteps(scenario).length,
+  scenario,
+  isolationActive,
   log: [],
 });
 
@@ -254,6 +259,7 @@ export interface AppState {
   recordSetuAudit: (input: SetuAuditInput) => void;
 
   createIncident: (input: ReportIncidentInput) => Incident;
+  addIncidentNote: (incidentId: string, note: string, actor: string) => void;
   triageIncident: (incidentId: string) => void;
   dispatchIncident: (incidentId: string, excludeVolunteerIds?: string[], forceVolunteerId?: string) => void;
   submitSOS: (input: ReportIncidentInput) => Incident;
@@ -265,11 +271,12 @@ export interface AppState {
   setVolunteerAvailability: (volunteerId: string, availability: VolunteerAvailability) => void;
   enrollVolunteer: (input: EnrollVolunteerInput) => Volunteer;
 
-  startDemo: () => void;
+  startDemo: (scenario?: DemoScenario) => void;
+  setDemoScenario: (scenario: DemoScenario) => void;
   pauseDemo: () => void;
   resumeDemo: () => void;
   skipDemoStep: () => void;
-  restartDemo: () => void;
+  restartDemo: (scenario?: DemoScenario) => void;
   exitDemo: () => void;
   resetDemo: () => void;
   resetAll: () => void;
@@ -277,6 +284,34 @@ export interface AppState {
 
 let simInterval: ReturnType<typeof setInterval> | null = null;
 let demoTimers: ReturnType<typeof setTimeout>[] = [];
+let demoReturnState: Partial<AppState> | null = null;
+
+function resetSimulationState(): Partial<AppState> {
+  return {
+    zones: clone(ZONES),
+    facilities: clone(FACILITIES),
+    volunteers: clone(VOLUNTEERS),
+    incidents: clone(INITIAL_INCIDENTS),
+    tasks: [],
+    systemStatus: { mode: "simulation", connectivity: "nominal", lastSyncAt: nowIso() } as SystemStatus,
+    riskSnapshots: clone(RISK_SNAPSHOTS),
+    riskHistory: Object.fromEntries(ZONES.map((z) => [z.id, [RISK_SNAPSHOTS[z.id]?.score ?? z.riskScore]])),
+    resources: clone(RESOURCES),
+    notifications: [],
+    auditLog: clone(AUDIT_SEED),
+    incidentSeq: 2,
+    demo: emptyDemoState(),
+    advisories: clone(INITIAL_ADVISORIES),
+    foundReports: clone(INITIAL_FOUND_REPORTS),
+    messages: [],
+    groundReports: [],
+    groundReportSeq: 0,
+    emergingSignals: [],
+    pilgrimFeedback: clone(INITIAL_FEEDBACK),
+    familyGroups: [],
+    ePasses: [],
+  };
+}
 
 function clearDemoTimers() {
   demoTimers.forEach((t) => clearTimeout(t));
@@ -296,6 +331,53 @@ const DEMO_ZONE = "z04";
 
 /** The deterministic state effect for a single 1-based demo step. */
 function runDemoStep(get: StoreGet, set: StoreSet, n: number) {
+  const scenario = get().demo.scenario;
+  if (scenario !== "missing") {
+    const input = scenario === "medical"
+      ? { type: "medical" as const, severity: "critical" as const, zoneId: "z01", summary: "Synthetic medical emergency reported near the Ramkund ghat approach." }
+      : { type: "crowd_pressure" as const, severity: "moderate" as const, zoneId: "z05", summary: "Synthetic crowd congestion reported on the Nashik–Trimbakeshwar transit corridor." };
+    switch (n) {
+      case 2: {
+        const incident = get().createIncident({
+          ...input,
+          reportedBy: { role: "pilgrim", label: `Synthetic pilgrim · ${DEMO_SCENARIOS[scenario].title}` },
+        });
+        set((s) => ({ demo: { ...s.demo, activeIncidentId: incident.id } }));
+        break;
+      }
+      case 3: {
+        const id = get().demo.activeIncidentId;
+        if (id) get().triageIncident(id);
+        break;
+      }
+      case 4: {
+        const id = get().demo.activeIncidentId;
+        if (id) {
+          get().dispatchIncident(id);
+          const task = get().tasks.find((t) => t.incidentId === id);
+          if (task) set((s) => ({ demo: { ...s.demo, activeTaskId: task.id } }));
+        }
+        break;
+      }
+      case 5: {
+        const id = get().demo.activeTaskId;
+        if (id) get().acceptTask(id);
+        break;
+      }
+      case 6: {
+        const id = get().demo.activeTaskId;
+        if (id) get().arriveTask(id);
+        break;
+      }
+      case 7: {
+        const id = get().demo.activeTaskId;
+        if (id) get().resolveTask(id, "resolved");
+        break;
+      }
+    }
+    return;
+  }
+
   const zone = findZone(DEMO_ZONE)!;
   const at = (dx: number, dy: number) => ({ x: zone.labelPoint.x + dx, y: zone.labelPoint.y + dy });
 
@@ -428,7 +510,7 @@ function advanceDemo(get: StoreGet, set: StoreSet) {
   }
 
   runDemoStep(get, set, next);
-  const meta = demoStep(next);
+  const meta = demoStep(next, demo.scenario);
   set((s) => ({
     demo: {
       ...s.demo,
@@ -511,12 +593,24 @@ const defaultData = {
 // simulation interval lives in module state that a reload clears too, so
 // simulationRunning is likewise reset — Management re-arms it via initSimulation().
 const persisted = loadPersistedState();
+const savedDemo = persisted?.demo as Partial<DemoState> | undefined;
+const savedScenario: DemoScenario = savedDemo?.scenario === "medical" || savedDemo?.scenario === "crowd"
+  ? savedDemo.scenario
+  : "missing";
 const initialData = persisted
   ? {
       ...defaultData,
       ...persisted,
       simulationRunning: false,
-      demo: { ...defaultData.demo, ...(persisted.demo as Partial<DemoState> | undefined), running: false },
+      demo: {
+        ...defaultData.demo,
+        ...savedDemo,
+        scenario: savedScenario,
+        totalSteps: demoSteps(savedScenario).length,
+        isolationActive: false,
+        running: false,
+        paused: false,
+      },
     }
   : defaultData;
 
@@ -1050,7 +1144,34 @@ export const useAppStore = create<AppState>((set, get) => ({
     return incident;
   },
 
+  addIncidentNote: (incidentId, note, actor) => {
+    const text = note.trim().slice(0, 500);
+    if (!text || !get().incidents.some((incident) => incident.id === incidentId)) return;
+    const timestamp = nowIso();
+    set((s) => ({
+      incidents: s.incidents.map((incident) => {
+        if (incident.id !== incidentId) return incident;
+        const updated = { ...incident, updatedAt: timestamp, timeline: [...incident.timeline] };
+        pushTimeline(updated, "note", "Field response note", actor, text);
+        return updated;
+      }),
+      auditLog: [{
+        id: `ae-${incidentId}-note-${Date.now()}`,
+        actor,
+        action: "INCIDENT_NOTE_ADDED",
+        entity: "incident",
+        entityId: incidentId,
+        timestamp,
+        metadata: text,
+      }, ...s.auditLog],
+    }));
+  },
+
   triageIncident: (incidentId) => {
+    const incident = get().incidents.find((i) => i.id === incidentId);
+    // A report can only be triaged once. Replayed clicks and cross-tab
+    // duplicate delivery must not append a second lifecycle event.
+    if (!incident || incident.status !== "reported") return;
     set((s) => ({
       incidents: s.incidents.map((i) => {
         if (i.id !== incidentId) return i;
@@ -1075,13 +1196,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   dispatchIncident: (incidentId, excludeVolunteerIds = [], forceVolunteerId) => {
     const state = get();
     const incident = state.incidents.find((i) => i.id === incidentId);
-    if (!incident) return;
+    if (!incident || !["reported", "triaged", "dispatched"].includes(incident.status)) return;
+    const activeTask = state.tasks.find(
+      (task) => task.incidentId === incidentId && !["resolved", "escalated", "cancelled"].includes(task.state)
+    );
+    if (activeTask) return;
+    const reservedVolunteerIds = state.tasks
+      .filter((task) => !["resolved", "escalated", "cancelled"].includes(task.state))
+      .map((task) => task.assigneeId);
+    const excludedVolunteerIds = [...new Set([...excludeVolunteerIds, ...reservedVolunteerIds])];
 
     // `forceVolunteerId` lets the control room (and the scripted Live Demo)
     // assign a specific responder instead of the nearest-match algorithm.
     // Default behaviour is unchanged when it is omitted.
     const forced = forceVolunteerId
-      ? state.volunteers.find((v) => v.id === forceVolunteerId && !excludeVolunteerIds.includes(v.id))
+      ? state.volunteers.find((v) => v.id === forceVolunteerId && !excludedVolunteerIds.includes(v.id) && v.availability === "available")
       : undefined;
     const match = forced
       ? { volunteer: forced, quality: "nearest" as const }
@@ -1089,7 +1218,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           state.volunteers,
           incident.zoneId,
           incident.position,
-          excludeVolunteerIds,
+          excludedVolunteerIds,
           incident.requiredSkill,
           incident.preferredLanguage
         );
@@ -1195,7 +1324,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   acceptTask: (taskId) => {
     const state = get();
     const task = state.tasks.find((t) => t.id === taskId);
-    if (!task) return;
+    const incident = task ? state.incidents.find((i) => i.id === task.incidentId) : undefined;
+    if (!task || task.state !== "assigned" || incident?.status !== "dispatched") return;
 
     set((s) => ({
       tasks: s.tasks.map((t) => (t.id === taskId ? { ...t, state: "accepted", acceptedAt: nowIso() } : t)),
@@ -1225,7 +1355,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   declineTask: (taskId) => {
     const state = get();
     const task = state.tasks.find((t) => t.id === taskId);
-    if (!task) return;
+    if (!task || task.state !== "assigned") return;
     const incidentId = task.incidentId;
     const decliningVolunteerId = task.assigneeId;
 
@@ -1250,7 +1380,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   arriveTask: (taskId) => {
     const state = get();
     const task = state.tasks.find((t) => t.id === taskId);
-    if (!task) return;
+    const incident = task ? state.incidents.find((i) => i.id === task.incidentId) : undefined;
+    if (!task || task.state !== "accepted" || incident?.status !== "acknowledged") return;
 
     set((s) => ({
       tasks: s.tasks.map((t) => (t.id === taskId ? { ...t, state: "arrived", arrivedAt: nowIso() } : t)),
@@ -1277,7 +1408,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   resolveTask: (taskId, outcome = "resolved") => {
     const state = get();
     const task = state.tasks.find((t) => t.id === taskId);
-    if (!task) return;
+    const linkedIncident = task ? state.incidents.find((i) => i.id === task.incidentId) : undefined;
+    const activeTaskStates = outcome === "resolved" ? ["arrived"] : ["assigned", "accepted", "arrived"];
+    if (!task || !activeTaskStates.includes(task.state) || !linkedIncident ||
+      (outcome === "resolved" && linkedIncident.status !== "responding") ||
+      (outcome === "escalated" && !["dispatched", "acknowledged", "responding"].includes(linkedIncident.status))) return;
 
     set((s) => ({
       tasks: s.tasks.map((t) => (t.id === taskId ? { ...t, state: outcome, resolvedAt: nowIso() } : t)),
@@ -1357,12 +1492,22 @@ export const useAppStore = create<AppState>((set, get) => ({
     return volunteer;
   },
 
-  startDemo: () => {
+  startDemo: (scenario = get().demo.scenario) => {
     clearDemoTimers();
-    get().resetAll();
-    set(() => ({ demo: { ...emptyDemoState(), running: true } }));
+    if (!get().demo.isolationActive) {
+      demoReturnState = extractPersistableData(get()) as Partial<AppState>;
+    }
+    set(() => ({
+      ...resetSimulationState(),
+      demo: { ...emptyDemoState(scenario, true), running: true },
+    }));
     // Kick off step 1 shortly after reset so the intro card lands cleanly.
     demoTimers.push(setTimeout(() => advanceDemo(get, set), 600));
+  },
+
+  setDemoScenario: (scenario) => {
+    if (get().demo.running || get().demo.isolationActive) return;
+    set((s) => ({ demo: { ...s.demo, ...emptyDemoState(scenario) } }));
   },
 
   pauseDemo: () => {
@@ -1376,7 +1521,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     clearDemoTimers();
     set((s) => ({ demo: { ...s.demo, paused: false } }));
     // Give the audience a beat to re-read, then continue the timeline.
-    const meta = demoStep(demo.stepIndex || 1);
+    const meta = demoStep(demo.stepIndex || 1, demo.scenario);
     demoTimers.push(setTimeout(() => advanceDemo(get, set), Math.min(2500, meta.durationMs)));
   },
 
@@ -1393,48 +1538,37 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  restartDemo: () => {
-    get().startDemo();
+  restartDemo: (scenario = get().demo.scenario) => {
+    get().startDemo(scenario);
   },
 
   exitDemo: () => {
     clearDemoTimers();
-    // Clears the scripted incident/reports and the demo slice, but not auth
-    // or anything outside the store. Returns /demo to its pre-start state.
-    get().resetAll();
+    if (!get().demo.isolationActive) return;
+    // A different normal tab may have updated the persisted application state
+    // while this tab was running the isolated demo. Restore the latest saved
+    // state; use the in-memory snapshot only when browser storage is unavailable.
+    const restored = loadPersistedState() ?? demoReturnState ?? resetSimulationState();
+    const savedDemo = restored.demo as Partial<DemoState> | undefined;
+    const scenario = savedDemo?.scenario === "medical" || savedDemo?.scenario === "crowd"
+      ? savedDemo.scenario
+      : "missing";
+    set((s) => ({ ...s, ...restored, demo: emptyDemoState(scenario) }));
+    demoReturnState = null;
   },
 
   resetDemo: () => {
     clearDemoTimers();
+    if (get().demo.isolationActive) {
+      get().exitDemo();
+      return;
+    }
     set(() => ({ demo: emptyDemoState() }));
   },
 
   resetAll: () => {
     clearDemoTimers();
-    set(() => ({
-      zones: clone(ZONES),
-      facilities: clone(FACILITIES),
-      volunteers: clone(VOLUNTEERS),
-      incidents: clone(INITIAL_INCIDENTS),
-      tasks: [],
-      systemStatus: { mode: "simulation", connectivity: "nominal", lastSyncAt: nowIso() } as SystemStatus,
-      riskSnapshots: clone(RISK_SNAPSHOTS),
-      riskHistory: Object.fromEntries(ZONES.map((z) => [z.id, [RISK_SNAPSHOTS[z.id]?.score ?? z.riskScore]])),
-      resources: clone(RESOURCES),
-      notifications: [],
-      auditLog: clone(AUDIT_SEED),
-      incidentSeq: 2,
-      demo: emptyDemoState(),
-      advisories: clone(INITIAL_ADVISORIES),
-      foundReports: clone(INITIAL_FOUND_REPORTS),
-      messages: [],
-      groundReports: [],
-      groundReportSeq: 0,
-      emergingSignals: [],
-      pilgrimFeedback: clone(INITIAL_FEEDBACK),
-      familyGroups: [],
-      ePasses: [],
-    }));
+    set(() => resetSimulationState());
   },
 }));
 

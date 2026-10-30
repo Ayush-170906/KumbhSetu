@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { Incident, Task, Volunteer, Zone } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { StatusPill } from "@/components/ui/StatusPill";
@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { severityTone, severityLabel, typeLabel } from "@/lib/incidentMeta";
 import { distance } from "@/lib/dispatch";
 import { OperationalMap } from "@/components/maps/OperationalMap";
+import { IncidentTimeline } from "@/components/incidents/IncidentTimeline";
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -34,6 +35,7 @@ export function TaskDetail({
   onResolve,
   onEscalate,
   onAttachPhoto,
+  onAddNote,
 }: {
   task: Task;
   incident: Incident;
@@ -46,9 +48,12 @@ export function TaskDetail({
   onResolve: () => void;
   onEscalate: () => void;
   onAttachPhoto: (dataUrl: string) => void;
+  onAddNote: (note: string) => void;
 }) {
   const distPx = distance(volunteer.position, incident.position);
   const fileInput = useRef<HTMLInputElement>(null);
+  const [note, setNote] = useState("");
+  const [noteSaved, setNoteSaved] = useState(false);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -80,6 +85,11 @@ export function TaskDetail({
         )}
 
         <p className="text-sm text-ink-muted mt-4 leading-relaxed border-t border-border pt-4">{incident.summary}</p>
+
+        <div className="mt-4 border-t border-border pt-3">
+          <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft">Assignment activity</h2>
+          <IncidentTimeline incident={incident} />
+        </div>
 
         <div className="mt-auto space-y-2 pt-6">
           <Button className="w-full" size="lg" onClick={onAccept}>Accept</Button>
@@ -135,11 +145,37 @@ export function TaskDetail({
           )}
         </div>
 
-        <div className="flex items-center gap-2 mt-4">
-          <button className="flex items-center gap-2 text-xs text-ink-muted border border-border rounded-sm px-3 py-2 w-fit">
-            <Icon name="phone" className="h-3.5 w-3.5" />
-            Contact Coordinator
-          </button>
+        <div className="mt-4 rounded-sm border border-border bg-surface-muted px-3 py-2 text-[11px] text-ink-muted">
+          Coordinator phone contact is not configured in this prototype. Use your established field radio procedure.
+        </div>
+
+        <div className="mt-4 border-t border-border pt-3">
+          <label htmlFor="response-note" className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-ink-soft">Response note</label>
+          <textarea
+            id="response-note"
+            value={note}
+            maxLength={500}
+            onChange={(event) => { setNote(event.target.value); setNoteSaved(false); }}
+            placeholder="Record an observation or action taken…"
+            rows={3}
+            className="w-full resize-none border border-border bg-surface px-3 py-2 text-xs text-ink placeholder:text-ink-soft"
+          />
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            <span aria-live="polite" className="text-[10px] text-status-green">{noteSaved ? "Note added to the local demo timeline" : "Saved in this browser’s demo session"}</span>
+            <Button size="sm" variant="outline" disabled={!note.trim()} onClick={() => {
+              onAddNote(note.trim());
+              setNote("");
+              setNoteSaved(true);
+            }}>Add note</Button>
+          </div>
+        </div>
+
+        <div className="mt-5 border-t border-border pt-3">
+          <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft">Response activity</h2>
+          <IncidentTimeline incident={incident} />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 mt-4">
           {arrived && (
             <>
               <input ref={fileInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFile} />

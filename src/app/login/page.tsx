@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   DEMO_ACCOUNTS,
@@ -21,9 +22,9 @@ const ROLE_ICON: Record<DemoRole, IconName> = {
 };
 
 const ROLE_PITCH: Record<DemoRole, string> = {
-  pilgrim: "Map, facilities, family group, one-tap SOS and the Kumbh Setu Assistant.",
-  volunteer: "Setu AI field companion — voice, translation, ground reports and your task queue.",
-  management: "Live operations map, Kumbh Pulse, Ops Copilot, advisories and the audit log.",
+  pilgrim: "Reference places, family group, local SOS prototype and the Kumbh Setu Assistant.",
+  volunteer: "Setu AI field companion prototype — voice, translation, sample reports and task queue.",
+  management: "Sample operations map, Kumbh Pulse, Ops Copilot, advisories and local activity log.",
 };
 
 function readParams() {
@@ -80,10 +81,13 @@ export default function LoginPage() {
     <div className="flex min-h-screen bg-ivory">
       {/* ---------- Immersive brand panel ---------- */}
       <aside className="relative hidden w-[42%] shrink-0 overflow-hidden lg:block">
-        <img
+        <Image
           src={KUMBH_IMAGES.ghats.src}
           alt={KUMBH_IMAGES.ghats.alt}
-          className="absolute inset-0 h-full w-full object-cover"
+          fill
+          priority
+          sizes="42vw"
+          className="object-cover"
           style={{ objectPosition: KUMBH_IMAGES.ghats.focus }}
         />
         <div className="photo-scrim-left absolute inset-0" />
@@ -105,8 +109,7 @@ export default function LoginPage() {
               One platform for the pilgrim, the volunteer and the control room.
             </h1>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/75">
-              Sign in to any role to explore the live-synced demo. Open all three in
-              separate tabs to watch a report move end-to-end.
+              Sign in to explore the shared, same-browser prototype. Demo actions stay local to this browser session.
             </p>
           </div>
           <span className="text-[10px] text-white/45">{KUMBH_IMAGES.ghats.credit}</span>

@@ -3,21 +3,21 @@ import { Button } from "@/components/ui/Button";
 import { Section } from "./Section";
 
 const steps = [
-  "A pilgrim raises an SOS, or an operator creates an incident manually.",
-  "The backend creates an incident with location, severity, timestamp and status.",
-  "The system identifies eligible available volunteers in the relevant zone.",
-  "The nearest available volunteer receives the task and accepts it.",
-  "Management sees the incident, assignment and every status transition live.",
+  "A pilgrim tries the sample SOS flow, or an operator creates a demo incident.",
+  "The local prototype records sample location, severity, time and status.",
+  "The demo identifies an eligible sample volunteer in the selected zone.",
+  "The volunteer demo shows the task for acknowledgement and response actions.",
+  "The management view displays the incident and demo status transitions in this browser.",
   "The volunteer marks the task resolved — or escalates it.",
-  "The response timeline is recorded for measurement and audit.",
+  "The local prototype records a sample activity timeline.",
 ];
 
 export function GoldenPathSection() {
   return (
     <Section
       eyebrow="The connected response loop"
-      title="One golden path, proven end-to-end — not a feature list."
-      lede="The first product objective is not to build every possible Kumbh feature. It is to prove one high-value, safety-critical workflow completely, across all three roles, with a shared, auditable state."
+      title="Explore one response workflow across three roles."
+      lede="Use the guided prototype to see how a sample report, volunteer task and management view can relate. No emergency service or authority is contacted."
     >
       <ol className="space-y-0 max-w-2xl">
         {steps.map((s, idx) => (
@@ -29,7 +29,7 @@ export function GoldenPathSection() {
       </ol>
       <div className="mt-8">
         <Link href="/demo">
-          <Button>Watch it run — Live Demo</Button>
+          <Button>Open guided demo</Button>
         </Link>
       </div>
     </Section>

@@ -297,7 +297,7 @@ export const KB: KBEntry[] = [
   {
     id: "kb-get-help",
     title: "How to get help quickly",
-    body: "The fastest help is the nearest volunteer (in uniform) or Help Desk — every zone has both. In the app, the SOS button sends your location and the type of problem to the nearest volunteer and the control room in one confirmed tap, and keeps trying on a fallback path if the network is weak. Use SOS for anything urgent: a medical problem, someone missing, feeling unsafe, or being caught in dangerous crowding.",
+    body: "For immediate danger, call India's national emergency number 112 or ask an on-site official for help. Kumbh Setu is a local prototype: its SOS flow only creates a sample report in this browser. It does not transmit location, contact a volunteer or authority, or provide an offline emergency service.",
     source: "Kumbh Setu knowledge base — getting help",
     tags: ["help", "sos", "emergency", "volunteer", "help desk", "urgent", "assistance", "police", "uniform"],
     intents: ["emergency", "safety", "information"],

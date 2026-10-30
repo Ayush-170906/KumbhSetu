@@ -15,6 +15,7 @@ const ACTION_KEYS = new Set([
   "tick",
   "setConnectivity",
   "createIncident",
+  "addIncidentNote",
   "triageIncident",
   "dispatchIncident",
   "submitSOS",
@@ -25,6 +26,7 @@ const ACTION_KEYS = new Set([
   "setVolunteerAvailability",
   "enrollVolunteer",
   "startDemo",
+  "setDemoScenario",
   "pauseDemo",
   "resumeDemo",
   "skipDemoStep",
@@ -53,7 +55,7 @@ const ACTION_KEYS = new Set([
   "recordSetuAudit",
 ]);
 
-function extractPersistableData(state: object): Record<string, unknown> {
+export function extractPersistableData(state: object): Record<string, unknown> {
   const data: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(state)) {
     if (!ACTION_KEYS.has(key)) data[key] = value;
@@ -79,6 +81,10 @@ export function initPersistence(store: { subscribe: (fn: (state: object) => void
   initialized = true;
 
   store.subscribe((state) => {
+    const candidate = state as { demo?: { isolationActive?: boolean } };
+    // The demo's temporary state is intentionally memory-only. The normal
+    // application snapshot remains untouched throughout a demo run.
+    if (candidate.demo?.isolationActive) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(extractPersistableData(state)));
     } catch {

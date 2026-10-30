@@ -90,6 +90,14 @@ Local copy: `data/nashik-monitor/` (raw GeoJSON, gitignored) →
 | Screenshots | `docs/screenshots/` |
 | Repo | https://github.com/Ayush-170906/KumbhSetu |
 
+## 7. Verified public emergency contacts
+
+| Service | Official source | Use in product |
+|---|---|---|
+| India national emergency number — 112 | https://112.gov.in/ | General immediate emergencies |
+| Maharashtra Emergency Medical Services — 108 | https://nhm.maharashtra.gov.in/en/scheme/maharashtra-emergency-medical-services-mems/ | Emergency ambulance |
+| Child Helpline — 1098 | https://wcd.gov.in/child/child-helpline | Child protection and assistance |
+
 ---
 
 _Encyclopedic links (Wikipedia / Britannica) are used for stable background

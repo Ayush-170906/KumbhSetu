@@ -63,10 +63,10 @@ export function SideNav({
   onReset: () => void;
 }) {
   return (
-    <nav className="w-56 shrink-0 border-r border-border bg-surface flex flex-col">
-      <div className="flex-1 overflow-y-auto scroll-thin px-2.5 py-3 space-y-4">
+    <nav aria-label="Management navigation" className="w-full shrink-0 border-b border-border bg-surface lg:w-56 lg:border-b-0 lg:border-r flex flex-col lg:max-h-none max-h-[28vh]">
+      <div className="flex-1 overflow-y-auto scroll-thin px-2.5 py-2 lg:py-3 space-y-3 lg:space-y-4">
         {GROUPS.map((group) => (
-          <div key={group.heading}>
+          <div key={group.heading} className="min-w-0">
             <div className="px-3 pb-1 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
               {group.heading}
             </div>
@@ -77,7 +77,8 @@ export function SideNav({
                   <button
                     key={item.id}
                     onClick={() => onChange(item.id)}
-                    className={`group relative w-full flex items-center gap-2.5 rounded-sm px-3 py-2 text-[13px] text-left transition-colors ${
+                    aria-current={isActive ? "page" : undefined}
+                    className={`group relative w-full flex items-center gap-2.5 rounded-sm px-3 py-2 text-[13px] text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${
                       isActive
                         ? "bg-primary-soft text-primary-soft-ink font-semibold"
                         : "text-ink-muted hover:bg-surface-muted hover:text-ink"

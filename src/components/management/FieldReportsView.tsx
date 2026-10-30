@@ -89,7 +89,7 @@ export function FieldReportsView({ zones }: { zones: Zone[] }) {
       {shown.length === 0 ? (
         <Panel>
           <p className="text-xs text-ink-soft">
-            No field reports yet. When a volunteer files one through Setu (voice or text), it appears here in real time.
+            No sample field reports yet. Reports created in the volunteer prototype appear here in this browser session.
           </p>
         </Panel>
       ) : (

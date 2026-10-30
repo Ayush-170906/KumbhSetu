@@ -342,10 +342,10 @@ export class MockLLMProvider implements AIProvider {
         reply: reply(
           lang,
           L(
-            "This sounds urgent. Use SOS — one tap sends your location and the problem to the nearest volunteer and the control room, and keeps trying if the signal is weak.",
-            "यह ज़रूरी लगता है। एसओएस दबाएँ — एक टैप में आपकी लोकेशन और समस्या नज़दीकी स्वयंसेवक और नियंत्रण कक्ष तक पहुँच जाती है।",
-            "हे तातडीचे वाटते. एसओएस दाबा — एका टॅपमध्ये तुमचे ठिकाण आणि समस्या जवळच्या स्वयंसेवक व नियंत्रण कक्षाला पोहोचते.",
-            "இது அவசரமாகத் தெரிகிறது. SOS ஐ அழுத்துங்கள் — ஒரே தட்டலில் உங்கள் இருப்பிடமும் பிரச்சினையும் அருகிலுள்ள தொண்டர் மற்றும் கட்டுப்பாட்டு அறைக்குச் செல்லும்."
+            "This prototype cannot contact emergency services. For urgent help, call 112. If safe, open SOS to create a sample report in this browser.",
+            "यह प्रोटोटाइप आपातकालीन सेवाओं से संपर्क नहीं कर सकता। तुरंत सहायता के लिए 112 पर कॉल करें। सुरक्षित होने पर, इस ब्राउज़र में नमूना रिपोर्ट बनाने के लिए SOS खोलें।",
+            "हे प्रोटोटाइप आपत्कालीन सेवांशी संपर्क करू शकत नाही. तातडीच्या मदतीसाठी 112 वर कॉल करा. सुरक्षित असल्यास, या ब्राउझरमध्ये नमुना अहवाल तयार करण्यासाठी SOS उघडा.",
+            "இந்த முன்மாதிரி அவசர சேவைகளைத் தொடர்புகொள்ளாது. உடனடி உதவிக்கு 112-ஐ அழைக்கவும். பாதுகாப்பாக இருந்தால், இந்த உலாவியில் மாதிரி அறிக்கையை உருவாக்க SOS-ஐத் திறக்கவும்."
           )
         ),
         navHint: { screen: "sos-type", label: "Open SOS now" },
@@ -390,10 +390,10 @@ export class MockLLMProvider implements AIProvider {
         reply: reply(
           lang,
           L(
-            "You can report this with a photo — it goes to the control room as a case, no need to find a desk.",
-            "आप इसे फ़ोटो के साथ दर्ज कर सकते हैं — यह नियंत्रण कक्ष तक केस के रूप में पहुँचता है।",
-            "तुम्ही हे फोटोसह नोंदवू शकता — ते नियंत्रण कक्षाला केस म्हणून पोहोचते.",
-            "இதை புகைப்படத்துடன் பதிவு செய்யலாம் — இது கட்டுப்பாட்டு அறைக்கு வழக்காகச் செல்லும்."
+            "You can create a sample report with a photo. It stays in this browser and is not sent to a service team.",
+            "आप फ़ोटो के साथ नमूना रिपोर्ट बना सकते हैं। यह इसी ब्राउज़र में रहेगी और किसी सेवा टीम को नहीं भेजी जाएगी।",
+            "तुम्ही फोटोसह नमुना अहवाल तयार करू शकता. तो या ब्राउझरमध्येच राहील; सेवा पथकाकडे पाठवला जाणार नाही.",
+            "புகைப்படத்துடன் மாதிரி அறிக்கையை உருவாக்கலாம். அது இந்த உலாவியிலேயே இருக்கும்; சேவை குழுவிற்கு அனுப்பப்படாது."
           )
         ),
         navHint: { screen: "report-issue", label: "Report an issue" },
@@ -567,7 +567,7 @@ export class MockLLMProvider implements AIProvider {
         },
       },
       requiresConfirmation: true,
-      confirmationPrompt: `Create a CRITICAL ${isCrowd ? "crowd-pressure" : "medical"} incident and page the nearest responder + control room now?`,
+      confirmationPrompt: `Create a sample ${isCrowd ? "crowd-pressure" : "medical"} incident in this browser's local prototype? For urgent real-world help, call 112.`,
       provenance: kb ? `Guidance: ${kb.source}` : undefined,
     };
   }

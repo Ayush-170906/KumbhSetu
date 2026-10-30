@@ -150,7 +150,7 @@ export function recomputeZoneRisk(
     { label: "Crowd Activity", weightPercent: clamp(Math.round(zone.densityPercent * 0.5), 5, 60) },
     { label: "Movement Change", weightPercent: baseline.contributors[1]?.weightPercent ?? 20 },
     { label: "Checkpoint Reports", weightPercent: openIncidentCount > 0 ? clamp(18 + openIncidentCount * 6, 18, 40) : (baseline.contributors[2]?.weightPercent ?? 18) },
-    { label: "Historical Pattern", weightPercent: baseline.contributors[3]?.weightPercent ?? 16 },
+    { label: "Sample baseline", weightPercent: baseline.contributors[3]?.weightPercent ?? 16 },
   ];
   const total = contributors.reduce((s, c) => s + c.weightPercent, 0) || 1;
   const normalized = contributors.map((c) => ({
@@ -162,9 +162,9 @@ export function recomputeZoneRisk(
   if (openIncidentCount > 0) {
     narrative = `${openIncidentCount} active incident${openIncidentCount > 1 ? "s" : ""} in this zone is contributing to elevated checkpoint reports and modeled risk.`;
   } else if (band === "yellow") {
-    narrative = "Elevated density approaching historical pre-peak pattern for this time window.";
+    narrative = "Synthetic demo inputs place this sample zone in the elevated band.";
   } else if (band === "green") {
-    narrative = "Density and movement signals within normal range for this time window.";
+    narrative = "Synthetic demo inputs place this sample zone in the normal band.";
   }
 
   return {

@@ -10,11 +10,7 @@ import { formatClockShort } from "@/lib/format";
 import { t } from "@/lib/i18n";
 import { LANGUAGE_LABELS } from "@/lib/i18n";
 import type { LanguageCode } from "@/lib/types";
-import {
-  buildEmergencyPacket,
-  EMERGENCY_SMS_SHORTCODE,
-  OFFLINE_SOP,
-} from "@/lib/emergencyPacket";
+import { OFFLINE_SOP } from "@/lib/emergencyPacket";
 
 const types: { type: IncidentType; label: string; icon: IconName; severity: "critical" | "moderate" }[] = [
   { type: "medical", label: "Medical Emergency", icon: "medical", severity: "critical" },
@@ -23,22 +19,34 @@ const types: { type: IncidentType; label: string; icon: IconName; severity: "cri
   { type: "other", label: "Other Assistance", icon: "help-desk", severity: "moderate" },
 ];
 
+const translatedLabels: Record<IncidentType, Record<LanguageCode, string>> = {
+  medical: { en: "Medical Emergency", hi: "चिकित्सा आपातकाल", mr: "वैद्यकीय आपत्काल", ta: "மருத்துவ அவசரம்" },
+  security: { en: "Security Concern", hi: "सुरक्षा संबंधी चिंता", mr: "सुरक्षाविषयक चिंता", ta: "பாதுகாப்பு கவலை" },
+  crowd_pressure: { en: "Crowd Distress", hi: "भीड़ में परेशानी", mr: "गर्दीतील त्रास", ta: "கூட்ட நெரிசல் சிக்கல்" },
+  facility: { en: "Facility Issue", hi: "सुविधा संबंधी समस्या", mr: "सुविधेची समस्या", ta: "வசதி தொடர்பான சிக்கல்" },
+  lost_person: { en: "Missing Person", hi: "लापता व्यक्ति", mr: "हरवलेली व्यक्ती", ta: "காணாமல் போனவர்" },
+  other: { en: "Other Assistance", hi: "अन्य सहायता", mr: "इतर मदत", ta: "பிற உதவி" },
+};
+
 export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) {
   const submitSOS = useAppStore((s) => s.submitSOS);
   const connectivity = useAppStore((s) => s.systemStatus.connectivity);
   const incidents = useAppStore((s) => s.incidents);
   const tasks = useAppStore((s) => s.tasks);
   const volunteers = useAppStore((s) => s.volunteers);
+  const zones = useAppStore((s) => s.zones);
   const language = useAppStore((s) => s.language);
 
   const [step, setStep] = useState<"type" | "confirm" | "sending" | "sent">("type");
   const [selected, setSelected] = useState<(typeof types)[number] | null>(null);
   const [incidentId, setIncidentId] = useState<string | null>(null);
   const [preferredLanguage, setPreferredLanguage] = useState<LanguageCode>(language);
-  const [packetCopied, setPacketCopied] = useState(false);
+  const [locationZoneId, setLocationZoneId] = useState(zone.id);
+  const [locationDetail, setLocationDetail] = useState("");
+  const [reportError, setReportError] = useState("");
 
   const offline = connectivity !== "nominal";
-  const packet = buildEmergencyPacket(zone.code, zone.id, 1);
+  const reportZone = zones.find((item) => item.id === locationZoneId) ?? zone;
 
   const incident = incidentId ? incidents.find((i) => i.id === incidentId) : undefined;
   const task = incident ? tasks.find((t) => t.incidentId === incident.id) : undefined;
@@ -46,15 +54,20 @@ export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) 
 
   function handleConfirm() {
     if (!selected) return;
+    if (!reportZone) {
+      setReportError("Choose the nearest landmark so the sample report has a location.");
+      return;
+    }
+    setReportError("");
     setStep("sending");
     const delay = connectivity === "nominal" ? 500 : 2200;
     setTimeout(() => {
       const incident = submitSOS({
         type: selected.type,
         severity: selected.severity,
-        zoneId: zone.id,
-        reportedBy: { role: "pilgrim", label: `Pilgrim · ${zone.shortName}` },
-        summary: `${selected.label} reported by a pilgrim near ${zone.shortName}.`,
+        zoneId: reportZone.id,
+        reportedBy: { role: "pilgrim", label: `Pilgrim · ${reportZone.shortName}` },
+        summary: `${selected.label} reported by a pilgrim near ${reportZone.shortName}${locationDetail.trim() ? ` — ${locationDetail.trim()}` : ""}.`,
         preferredLanguage,
       });
       setIncidentId(incident.id);
@@ -67,6 +80,10 @@ export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) 
       <div className="flex-1 flex flex-col p-4">
         <h1 className="text-lg font-semibold text-ink">What&rsquo;s the emergency?</h1>
         <p className="text-xs text-ink-muted mt-1">Select the option that best matches what&rsquo;s happening.</p>
+        <div className="mt-4 flex items-center justify-between gap-3 border-l-2 border-status-red bg-status-red-bg/60 px-3 py-2.5">
+          <p className="text-[11px] leading-relaxed text-ink-muted">This prototype only saves a sample report here. For urgent real-world help, call <strong className="text-ink">112</strong>.</p>
+          <a href="tel:112" className="inline-flex min-h-11 shrink-0 items-center gap-1.5 bg-status-red px-3 text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-status-red"><Icon name="phone" className="h-3.5 w-3.5" />Call 112</a>
+        </div>
         <div className="grid grid-cols-2 gap-3 mt-5">
           {types.map((opt) => (
             <button
@@ -75,14 +92,14 @@ export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) 
                 setSelected(opt);
                 setStep("confirm");
               }}
-              className="flex flex-col items-center gap-2 rounded-sm border border-border bg-surface py-6 hover:border-primary transition-colors"
+              className="flex min-h-24 flex-col items-center justify-center gap-2 border border-border bg-surface px-2 py-4 hover:border-primary transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               <Icon name={opt.icon} className="h-6 w-6 text-primary-dark" />
-              <span className="text-xs font-medium text-ink text-center">{opt.label}</span>
+              <span className="text-xs font-medium text-ink text-center">{translatedLabels[opt.type][language]}</span>
             </button>
           ))}
         </div>
-        <button onClick={onClose} className="text-xs text-ink-soft mt-6 self-center">
+          <button onClick={onClose} className="mt-4 min-h-11 px-4 text-xs text-ink-soft self-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
           Cancel
         </button>
       </div>
@@ -98,12 +115,21 @@ export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) 
           </div>
           <h1 className="text-lg font-semibold text-ink">{t("confirmAssistanceTitle", language)}</h1>
           <p className="text-sm text-ink-muted mt-2 max-w-xs">
-            Your location ({zone.shortName}) will be shared with the nearest available response volunteer and with
-            the control room.
+            This prototype saves a sample report in this browser only. It does not contact a responder or share your location.
           </p>
 
+          <div className="mt-4 w-full text-left">
+            <label htmlFor="sos-location" className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-ink-soft">Nearest landmark or zone</label>
+            <select id="sos-location" value={locationZoneId} onChange={(event) => { setLocationZoneId(event.target.value); setReportError(""); }} className="h-11 w-full border border-border bg-surface px-3 text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
+              {zones.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+            <p className="mt-1 text-[10px] text-ink-soft">Approximate sample zone only. GPS permission is not requested.</p>
+            <label htmlFor="sos-detail" className="mb-1.5 mt-3 block text-[10px] font-semibold uppercase tracking-wide text-ink-soft">Helpful detail <span className="normal-case font-normal">(optional)</span></label>
+            <textarea id="sos-detail" value={locationDetail} maxLength={160} onChange={(event) => { setLocationDetail(event.target.value); setReportError(""); }} rows={2} placeholder="A nearby gate, sign or visible landmark" className="w-full resize-none border border-border bg-surface px-3 py-2 text-xs text-ink placeholder:text-ink-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" />
+          </div>
+
           <div className="mt-4">
-            <div className="text-[10px] uppercase tracking-wide text-ink-soft mb-1.5">Preferred language for your responder</div>
+            <div className="text-[10px] uppercase tracking-wide text-ink-soft mb-1.5">Preferred language · demo setting</div>
             <div className="flex gap-1.5 justify-center flex-wrap">
               {(Object.keys(LANGUAGE_LABELS) as LanguageCode[]).map((code) => (
                 <button
@@ -123,36 +149,12 @@ export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) 
             <div className="mt-5 w-full text-left rounded-sm border border-status-amber-border bg-status-amber-bg/50 p-3">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-status-amber">
                 <Icon name="wifi-off" className="h-3.5 w-3.5" />
-                Connectivity degraded — offline fallback
+                Connectivity degraded
               </div>
               <p className="text-[11px] text-ink-muted mt-1">
-                Send this emergency packet as an SMS. It carries your zone, location and time in one
-                short message the control room can act on.
+                This prototype has no emergency SMS service. For urgent help, call the official national emergency number.
               </p>
-              <div className="mt-2 font-mono-num text-[11px] bg-surface border border-border rounded-sm px-2 py-1.5 break-all text-ink">
-                {packet}
-              </div>
-              <div className="flex gap-2 mt-2">
-                <a
-                  href={`sms:${EMERGENCY_SMS_SHORTCODE}?body=${encodeURIComponent(packet)}`}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-sm bg-status-red text-white text-xs font-medium py-2 hover:bg-[#8f2c20] transition-colors"
-                >
-                  <Icon name="phone" className="h-3.5 w-3.5" />
-                  Send as SMS
-                </a>
-                <button
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(packet);
-                      setPacketCopied(true);
-                      setTimeout(() => setPacketCopied(false), 2000);
-                    } catch {}
-                  }}
-                  className="rounded-sm border border-border bg-surface text-xs text-ink-muted px-3 hover:text-ink"
-                >
-                  {packetCopied ? "Copied" : "Copy"}
-                </button>
-              </div>
+              <a href="tel:112" className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-status-red px-4 py-2 text-sm font-semibold text-white">Call 112</a>
 
               <div className="mt-3 space-y-2">
                 <div className="text-[10px] uppercase tracking-wide text-ink-soft">
@@ -178,8 +180,9 @@ export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) 
           )}
         </div>
         <div className="space-y-2 pt-3 shrink-0">
+          {reportError && <p role="alert" className="border border-status-red-border bg-status-red-bg px-3 py-2 text-xs text-status-red">{reportError}</p>}
           <Button className="w-full" size="lg" onClick={handleConfirm}>
-            {t("confirmSend", language)}
+            Create local sample report
           </Button>
           <Button className="w-full" size="lg" variant="ghost" onClick={() => setStep("type")}>
             {t("cancel", language)}
@@ -194,7 +197,7 @@ export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) 
       <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
         <div className="h-3 w-3 rounded-full bg-primary map-pulse" />
         <p className="text-sm text-ink-muted">
-          {connectivity === "nominal" ? "Sending your request…" : "Attempting emergency fallback…"}
+          Creating a sample report…
         </p>
       </div>
     );
@@ -207,14 +210,15 @@ export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) 
           <div className="h-14 w-14 rounded-full bg-status-green-bg flex items-center justify-center mb-4">
             <Icon name="check" className="h-6 w-6 text-status-green" />
           </div>
-          <h1 className="text-lg font-semibold text-ink">{t("requestSent", language)}</h1>
+          <h1 className="text-lg font-semibold text-ink">Demo report created</h1>
           <p className="font-mono-num text-sm text-ink-muted mt-1">{incident.code}</p>
+          <p className="text-xs text-ink-muted mt-2 max-w-xs">Saved in this browser’s prototype session. No emergency service or authority has been contacted.</p>
         </div>
 
         <div className="rounded-sm border border-border bg-surface p-4 mt-2 space-y-3">
-          <ChecklistRow label={t("locationShared", language)} done />
-          <ChecklistRow label={t("volunteerNotified", language)} done={!!incident.assignedVolunteerId} />
-          <ChecklistRow label={t("managementNotified", language)} done />
+          <ChecklistRow label="Sample location attached to demo report" done />
+          <ChecklistRow label="Visible in the local volunteer demo" done={!!incident.assignedVolunteerId} />
+          <ChecklistRow label="Visible in the local management demo" done />
         </div>
 
         <div className="rounded-sm border border-border bg-surface p-4 mt-3">
@@ -244,8 +248,7 @@ export function SOSFlow({ zone, onClose }: { zone: Zone; onClose: () => void }) 
 
         <div className="text-[11px] text-ink-soft mt-3">
           Reported {formatClockShort(incident.createdAt)}
-          {offline ? " · sent via SMS fallback — status may lag until connectivity returns" : ""} · This
-          status updates automatically as the volunteer and control room respond.
+          {offline ? " · connectivity marked degraded in demo" : ""} · Local demo status only.
         </div>
 
         {task?.state === "resolved" && (

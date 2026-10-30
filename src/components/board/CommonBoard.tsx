@@ -215,14 +215,13 @@ export function CommonBoard() {
                 Common Operations Board
               </h1>
               <p className="text-white/75 text-xs sm:text-sm mt-1 max-w-lg">
-                One shared, live picture for everyone — pilgrims, volunteers and the control room.
-                News, notices, live incidents, zone status, helplines and feedback in one place.
+                A shared prototype view for pilgrims, volunteers and operators. Operational state is simulated and stored in this browser.
               </p>
             </div>
             <div className="flex flex-col items-end gap-1.5 shrink-0">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur px-2.5 py-1 text-[11px] text-white font-medium">
                 <span className="h-1.5 w-1.5 rounded-full bg-status-green animate-pulse" />
-                Live · synced
+                Same-browser demo
               </span>
               <span className="text-[11px] text-white/70 font-mono-num">{formatClockShort(now)}</span>
               <SimTag label="DEMO DATA" className="!bg-white/10 !text-white/80 !border-white/20" />
@@ -265,8 +264,8 @@ export function CommonBoard() {
 
         {/* News & bulletins */}
         <Section
-          title="News & bulletins"
-          hint="Latest from the Mela administration"
+          title="Sample operational messages"
+          hint="Illustrative examples · not current authority notices"
           icon="pulse"
         >
           <div className="space-y-2.5">
@@ -401,14 +400,14 @@ export function CommonBoard() {
         {/* Ongoing response */}
         <Section
           title="Ongoing response"
-          hint="Open incidents and who is on them right now"
+          hint="Sample incidents and responders in this browser session"
           icon="pulse"
         >
           {activeIncidents.length === 0 ? (
             <p className="text-xs text-ink-soft">
-              No open incidents — all clear across every zone. Raise an SOS in the pilgrim app or{" "}
+              No sample incidents are open. Create a local demo report in the pilgrim app or{" "}
               <Link href="/demo" className="text-primary hover:text-primary-dark font-medium">
-                run the live demo
+                open the guided demo
               </Link>{" "}
               and it appears here instantly.
             </p>
@@ -645,7 +644,7 @@ export function CommonBoard() {
           {helpDesks.length > 0 && (
             <div className="mt-3 pt-3 border-t border-border">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft mb-1.5">
-                Help desks on site
+                Sample help-desk locations · verify locally
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {helpDesks.map((f) => (
@@ -686,8 +685,8 @@ export function CommonBoard() {
 
         <p className="text-[11px] text-ink-soft leading-relaxed pt-1">
           This board is read-only apart from feedback. Every SOS, dispatch, advisory and ground
-          report raised on the pilgrim, volunteer or control-room apps appears here within the same
-          browser, live-synced across tabs. Operational data and bulletins shown are synthetic and
+          report raised in the pilgrim, volunteer or control-room prototypes appears here within the same
+          browser, synced across tabs. Operational data and bulletins shown are synthetic and
           for demonstration only — not affiliated with any Kumbh Mela authority. Photos from
           Wikimedia Commons (see <span className="font-mono-num">public/images/kumbh/CREDITS.md</span>).
         </p>

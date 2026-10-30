@@ -16,6 +16,7 @@ export function IncidentTimeline({ incident }: { incident: Incident }) {
             <span className="font-mono-num text-[11px] text-ink-soft shrink-0">{formatClock(event.timestamp)}</span>
           </div>
           {event.actor && <div className="text-[11px] text-ink-muted mt-0.5">{event.actor}</div>}
+          {event.detail && <p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-ink-muted">{event.detail}</p>}
         </li>
       ))}
     </ol>

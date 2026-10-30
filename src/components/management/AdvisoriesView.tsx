@@ -38,10 +38,10 @@ export function AdvisoriesView({
         <div>
           <h2 className="font-editorial text-xl text-ink">Advisories &amp; Broadcasts</h2>
           <p className="text-xs text-ink-muted mt-0.5">
-            Publish a guidance notice that appears instantly on every connected Pilgrim screen for the selected zone.
+            Publish a sample notice to the pilgrim prototype open in this browser session for the selected zone.
           </p>
         </div>
-        <SimTag label="LIVE TO ALL TABS" />
+        <SimTag label="LOCAL DEMO" />
       </div>
 
       <Panel>

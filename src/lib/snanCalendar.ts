@@ -80,7 +80,7 @@ export const SNAN_CALENDAR: SnanDay[] = [
 ];
 
 const DISCLAIMER =
-  "Dates are the schedule Setu holds; the Mela authority confirms them on the notice boards.";
+  "Illustrative scenario data only — not an official schedule. Verify all dates, sites and operating guidance with the Mela authority.";
 
 function toDate(iso: string): Date {
   return new Date(`${iso}T00:00:00`);

@@ -1,21 +1,18 @@
 import { ClientOnly } from "@/components/ui/ClientOnly";
 import { AuthGate } from "@/components/auth/AuthGate";
 import { FieldHome } from "@/components/setu/FieldHome";
+import { RouteLoading } from "@/components/ui/RouteLoading";
 
 export const metadata = {
   title: "Kumbh Setu AI — Field Companion",
   description:
-    "Voice-first AI companion for volunteers on the ground — ask, translate, read photos, report and act, grounded in live operational data.",
+    "Volunteer field companion prototype — review sample tasks, ask for guidance, translate and record demo actions.",
 };
 
 export default function FieldPage() {
   return (
     <ClientOnly
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-ivory text-ink-muted text-sm">
-          Waking Setu…
-        </div>
-      }
+      fallback={<RouteLoading title="Opening field mode" detail="Loading assignments and response tools…" />}
     >
       <AuthGate area="volunteer">
         <FieldHome />

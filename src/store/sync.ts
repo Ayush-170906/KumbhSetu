@@ -14,6 +14,7 @@ const ACTION_KEYS = new Set([
   "tick",
   "setConnectivity",
   "createIncident",
+  "addIncidentNote",
   "triageIncident",
   "dispatchIncident",
   "submitSOS",
@@ -24,6 +25,7 @@ const ACTION_KEYS = new Set([
   "setVolunteerAvailability",
   "enrollVolunteer",
   "startDemo",
+  "setDemoScenario",
   "pauseDemo",
   "resumeDemo",
   "skipDemoStep",
@@ -70,13 +72,19 @@ export function initCrossTabSync() {
   const channel = new BroadcastChannel(CHANNEL_NAME);
 
   channel.onmessage = (event: MessageEvent) => {
+    // Do not let ordinary tabs mutate an in-progress isolated demo.
+    if (useAppStore.getState().demo.isolationActive) return;
     applyingRemote = true;
-    useAppStore.setState(event.data);
-    applyingRemote = false;
+    try {
+      useAppStore.setState(event.data);
+    } finally {
+      applyingRemote = false;
+    }
   };
 
   useAppStore.subscribe((state) => {
     if (applyingRemote) return;
+    if (state.demo.isolationActive) return;
     channel.postMessage(extractData(state));
   });
 

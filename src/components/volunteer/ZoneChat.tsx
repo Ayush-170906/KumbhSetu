@@ -24,9 +24,9 @@ export function ZoneChat({
       <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
         <div>
           <div className="text-xs font-semibold text-ink">{zone?.shortName ?? "Zone"} coordination channel</div>
-          <div className="text-[10.5px] text-ink-soft">Every volunteer on shift in this zone sees this thread live.</div>
+          <div className="text-[10.5px] text-ink-soft">Sample messages stored in this browser’s prototype session.</div>
         </div>
-        <SimTag label="LIVE" />
+        <SimTag label="DEMO" />
       </div>
 
       <div className="flex-1 overflow-y-auto scroll-thin px-4 py-3 space-y-2.5">

@@ -1,286 +1,46 @@
-"use client";
-
 import { Icon } from "@/components/ui/Icon";
 
-type Camera = {
-  id: number;
-  name: string;
-  location: string;
-  image: string;
-  status: string;
-  confidence: number;
-  detection: "face" | "weapon" | "crowd" | "behaviour" | "none";
-};
-
-const cameras: Camera[] = [
-  {
-    id: 1,
-    name: "Camera 01",
-    location: "Main Gate",
-    image: "/images/cctv/camera1.jpg",
-    status: "WATCHLIST MATCH",
-    confidence: 92,
-    detection: "face",
-  },
-  {
-    id: 2,
-    name: "Camera 02",
-    location: "Pilgrim Pathway",
-    image: "/images/cctv/camera2.jpg",
-    status: "NORMAL",
-    confidence: 100,
-    detection: "none",
-  },
-  {
-    id: 3,
-    name: "Camera 03",
-    location: "Entry Corridor",
-    image: "/images/cctv/camera3.jpg",
-    status: "WEAPON ALERT",
-    confidence: 89,
-    detection: "weapon",
-  },
-  {
-    id: 4,
-    name: "Camera 04",
-    location: "Ghat Area",
-    image: "/images/cctv/camera4.jpg",
-    status: "NORMAL",
-    confidence: 100,
-    detection: "none",
-  },
-  {
-    id: 5,
-    name: "Camera 05",
-    location: "River Ghat",
-    image: "/images/cctv/camera5.jpg",
-    status: "HIGH CROWD DENSITY",
-    confidence: 84,
-    detection: "crowd",
-  },
-  {
-    id: 6,
-    name: "Camera 06",
-    location: "Parking Zone",
-    image: "/images/cctv/camera6.jpg",
-    status: "SUSPICIOUS ACTIVITY",
-    confidence: 76,
-    detection: "behaviour",
-  },
-];
+const principles = [
+  ["Approved source", "Connect only a formally approved camera or sensor source with documented purpose and access."],
+  ["Human review", "An authorized operator reviews any signal; automated output must never be treated as a verified event."],
+  ["Accountable action", "Record a confirmed operational decision with its source, reviewer and follow-up."],
+] as const;
 
 export function SecurityView() {
   return (
-    <div className="p-6">
-      
-      {/* HEADER */}
-      <div className="mb-6">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
-          Concept · not a capability claim
-        </p>
+    <div className="p-5 md:p-6 max-w-5xl">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">Future capability · concept only</p>
+      <h1 className="font-editorial text-2xl text-ink mt-1">Security integrations</h1>
+      <p className="text-sm text-ink-muted mt-2 max-w-2xl leading-relaxed">
+        Kumbh Setu is not connected to CCTV or security systems. No footage, camera inventory,
+        detections or security analytics are available in this prototype.
+      </p>
 
-        <h1 className="font-editorial text-2xl text-ink mt-1">Security — concept view</h1>
-
-        <p className="text-sm text-ink-muted mt-2 max-w-2xl leading-relaxed">
-          An illustration of how camera-based alerts <em>could</em> surface to an operator if a
-          venue integrated an approved CCTV/analytics system in future. Kumbh Setu has no camera
-          network, runs no video analytics, and makes no claim to. Everything below is mocked
-          imagery with drawn-on overlays.
-        </p>
-
-        <div className="mt-3 inline-flex items-center gap-2 rounded-sm border border-status-amber-border bg-status-amber-bg px-3 py-1.5 text-xs font-medium text-status-amber">
-          <Icon name="warning" className="h-3.5 w-3.5" />
-          Illustrative only — no live feeds, no real detections, not part of the demo workflow.
-        </div>
-      </div>
-
-      {/* STATUS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-
-        <div className="border rounded-lg p-4 bg-white">
-          <p className="text-sm text-gray-500">Cameras (mock)</p>
-          <p className="text-3xl font-bold">24</p>
-          <p className="text-xs text-gray-500 mt-2">
-            ● Simulated
-          </p>
-        </div>
-
-        <div className="border rounded-lg p-4 bg-red-50">
-          <p className="text-sm text-red-600">Watchlist Alerts</p>
-          <p className="text-3xl font-bold text-red-700">1</p>
-          <p className="text-xs text-red-600 mt-2">
-            Verification required
-          </p>
-        </div>
-
-        <div className="border rounded-lg p-4 bg-red-50">
-          <p className="text-sm text-red-600">Weapon Alerts</p>
-          <p className="text-3xl font-bold text-red-700">1</p>
-          <p className="text-xs text-red-600 mt-2">
-            High priority
-          </p>
-        </div>
-
-        <div className="border rounded-lg p-4 bg-yellow-50">
-          <p className="text-sm text-yellow-700">Crowd Risk</p>
-          <p className="text-3xl font-bold text-yellow-700">HIGH</p>
-          <p className="text-xs text-yellow-700 mt-2">
-            2 zones require monitoring
-          </p>
-        </div>
-
-      </div>
-
-      {/* CCTV TITLE */}
-      <div className="flex justify-between items-center mb-4">
-
-        <div>
-          <h2 className="text-xl font-bold">
-            CCTV Intelligence &mdash; concept view
-          </h2>
-
-          <p className="text-xs text-gray-500 mt-1">
-            Mock feeds with illustrative detection overlays. Not connected to any real
-            camera network &mdash; shows how operator alerts would surface.
-          </p>
-        </div>
-
-        <div className="text-sm font-bold text-gray-500">
-          ● SIMULATION
-        </div>
-
-      </div>
-
-      {/* CAMERA GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-
-        {cameras.map((camera) => (
-
-          <div
-            key={camera.id}
-            className="border rounded-lg overflow-hidden bg-white shadow"
-          >
-
-            {/* IMAGE */}
-            <div className="relative h-64 bg-black">
-
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={camera.image}
-                alt={camera.name}
-                className="w-full h-full object-cover"
-              />
-
-              {/* DARK CCTV EFFECT */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
-
-              {/* SIM badge */}
-              <div className="absolute top-3 left-3 bg-gray-800/80 text-white text-xs px-3 py-1 rounded">
-                SIM
-              </div>
-
-              {/* CAMERA NAME */}
-              <div className="absolute top-3 right-3 bg-black/70 text-white text-xs px-3 py-1 rounded">
-                {camera.name}
-              </div>
-
-              {/* TIME */}
-              <div className="absolute top-10 right-3 bg-black/70 text-white text-xs px-3 py-1 rounded">
-                10:24:32 AM
-              </div>
-
-              {/* FACE DETECTION */}
-              {camera.detection === "face" && (
-                <>
-                  <div className="absolute left-[42%] top-[30%] w-16 h-24 border-4 border-red-500">
-                    <div className="absolute -top-7 left-0 bg-red-600 text-white text-[10px] px-2 py-1 whitespace-nowrap">
-                      MATCH 92%
-                    </div>
-                  </div>
-
-                  <div className="absolute bottom-3 left-3 bg-red-600 text-white text-xs px-3 py-2 rounded">
-                    ⚠ WATCHLIST MATCH
-                  </div>
-                </>
-              )}
-
-              {/* WEAPON DETECTION */}
-              {camera.detection === "weapon" && (
-                <>
-                  <div className="absolute right-[25%] top-[42%] w-24 h-16 border-4 border-red-500">
-                    <div className="absolute -top-7 left-0 bg-red-600 text-white text-[10px] px-2 py-1 whitespace-nowrap">
-                      OBJECT 89%
-                    </div>
-                  </div>
-
-                  <div className="absolute bottom-3 left-3 bg-red-600 text-white text-xs px-3 py-2 rounded">
-                    ⚠ HIGH PRIORITY ALERT
-                  </div>
-                </>
-              )}
-
-              {/* CROWD DENSITY */}
-              {camera.detection === "crowd" && (
-                <>
-                  <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-yellow-500 text-white text-xs px-3 py-2 rounded">
-                    HIGH CROWD DENSITY
-                  </div>
-
-                  <div className="absolute bottom-3 left-3 bg-yellow-500 text-black text-xs px-3 py-2 rounded">
-                    👥 Density: 78%
-                  </div>
-                </>
-              )}
-
-              {/* SUSPICIOUS BEHAVIOUR */}
-              {camera.detection === "behaviour" && (
-                <>
-                  <div className="absolute left-[30%] top-[42%] w-10 h-20 border-2 border-yellow-400" />
-
-                  <div className="absolute right-[28%] top-[40%] w-10 h-20 border-2 border-yellow-400" />
-
-                  <div className="absolute bottom-3 left-3 bg-yellow-500 text-black text-xs px-3 py-2 rounded">
-                    ⚠ SUSPICIOUS BEHAVIOUR
-                  </div>
-                </>
-              )}
-
-              {/* NORMAL */}
-              {camera.detection === "none" && (
-                <div className="absolute bottom-3 left-3 bg-green-600 text-white text-xs px-3 py-2 rounded">
-                  ✓ NORMAL • NO ALERTS
-                </div>
-              )}
-
-            </div>
-
-            {/* CAMERA DETAILS */}
-            <div className="p-4">
-
-              <div className="flex justify-between">
-                <div>
-                  <h3 className="font-bold">
-                    {camera.location}
-                  </h3>
-
-                  <p className="text-sm text-gray-500 mt-1">
-                    {camera.status}
-                  </p>
-                </div>
-
-                <div className="text-sm font-bold">
-                  {camera.confidence}%
-                </div>
-              </div>
-
-            </div>
-
+      <section className="mt-6 border border-status-amber-border bg-status-amber-bg/60 p-4" role="note">
+        <div className="flex gap-3">
+          <Icon name="warning" className="h-5 w-5 text-status-amber shrink-0 mt-0.5" />
+          <div>
+            <h2 className="text-sm font-semibold text-ink">No live security data</h2>
+            <p className="text-sm text-ink-muted mt-1">This page contains no camera feeds or simulated threat alerts. It describes safeguards required before a future integration.</p>
           </div>
+        </div>
+      </section>
 
-        ))}
-
-      </div>
-
+      <section className="mt-8">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">Integration safeguards</p>
+        <h2 className="font-editorial text-xl text-ink mt-1">A careful path to operational use</h2>
+        <div className="mt-4 divide-y divide-border border-y border-border">
+          {principles.map(([title, detail], index) => (
+            <article key={title} className="grid grid-cols-[2.5rem_1fr] gap-3 py-4">
+              <span className="font-mono-num text-sm text-primary-dark">0{index + 1}</span>
+              <div>
+                <h3 className="text-sm font-semibold text-ink">{title}</h3>
+                <p className="text-sm text-ink-muted mt-1 max-w-2xl">{detail}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

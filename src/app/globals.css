@@ -56,9 +56,13 @@
   --color-ops-ink-muted: #625d52;
   --color-ops-ink-soft: #938d7f;
 
-  --font-ui: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-editorial: var(--font-plex-serif), "IBM Plex Serif", Georgia, serif;
-  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+  /* System stacks keep first paint stable and builds independent of font CDNs. */
+  --font-inter: Inter, "Segoe UI", Roboto, "Noto Sans", Arial, sans-serif;
+  --font-plex-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --font-plex-mono: "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-ui: var(--font-inter);
+  --font-editorial: var(--font-plex-serif);
+  --font-mono: var(--font-plex-mono);
 
   --shadow-panel: 0 1px 2px rgba(36, 26, 18, 0.06), 0 4px 16px rgba(36, 26, 18, 0.05);
   --shadow-card: 0 1px 2px rgba(36, 26, 18, 0.05);
@@ -144,6 +148,11 @@ body {
   border-color: var(--color-border);
 }
 
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary) 75%, white);
+  outline-offset: 2px;
+}
+
 ::selection {
   background: var(--color-primary-soft);
   color: var(--color-primary-soft-ink);
@@ -211,7 +220,13 @@ body {
 .reveal-5 { animation-delay: 0.37s; }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal, .animate-fade-in, .animate-fade-in-up { animation: none !important; }
+  .reveal, .animate-fade-in, .animate-fade-in-up, .map-pulse { animation: none !important; }
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* Editorial display type — tighter tracking + optical sizing for big headlines */

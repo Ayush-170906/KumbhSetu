@@ -1,14 +1,11 @@
 import { ClientOnly } from "@/components/ui/ClientOnly";
 import DemoApp from "@/components/demo/DemoApp";
+import { RouteLoading } from "@/components/ui/RouteLoading";
 
 export default function DemoPage() {
   return (
     <ClientOnly
-      fallback={
-        <div className="h-screen flex items-center justify-center bg-ivory text-ink-muted text-sm">
-          Loading demo engine…
-        </div>
-      }
+      fallback={<RouteLoading title="Loading Demo Studio" detail="Preparing the isolated scenario…" />}
     >
       <DemoApp />
     </ClientOnly>

@@ -32,7 +32,7 @@ export function Nav() {
             <Button size="sm" variant="ghost">Sign in</Button>
           </Link>
           <Link href="/demo">
-            <Button size="sm">Run Live Demo</Button>
+            <Button size="sm">Run guided demo</Button>
           </Link>
         </div>
       </div>

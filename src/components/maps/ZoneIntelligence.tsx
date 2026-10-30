@@ -54,9 +54,9 @@ export function ZoneIntelligence({
     <div className="space-y-5">
       <div className="grid grid-cols-3 gap-2">
         <StatBlock
-          label="Occupancy"
+          label="Sample occupancy"
           value={`${Math.round((zone.currentOccupancy / zone.capacity) * 100)}%`}
-          sub={`${zone.currentOccupancy.toLocaleString("en-IN")} est.`}
+          sub={`${zone.currentOccupancy.toLocaleString("en-IN")} sample`}
         />
         <StatBlock label="Density" value={zone.density.toUpperCase()} />
         <StatBlock label="Volunteers" value={String(available.length)} sub="available" />
@@ -88,13 +88,13 @@ export function ZoneIntelligence({
             <li key={s.id} className="flex items-start gap-2">
               <Icon name="pulse" className="h-3.5 w-3.5 text-status-amber shrink-0 mt-0.5" />
               <span>
-                {s.headline} · {(s.confidence * 100) | 0}% confidence
+                {s.headline} · sample signal
               </span>
             </li>
           ))}
           <Signal
             on={zone.density === "high" || zone.density === "severe"}
-            text={`Elevated crowd activity — ${zone.densityPercent}% of capacity, trend ${zone.trend}`}
+            text={`Sample density input — ${zone.densityPercent}% of capacity, sample trend ${zone.trend}`}
           />
           {corroborated.length === 0 && zoneSignals.length === 0 && criticalOpen.length === 0 && (
             <li className="text-ink-soft">
@@ -178,8 +178,7 @@ export function ZoneIntelligence({
       </div>
 
       <div className="text-[10px] text-ink-soft border-t border-border pt-2">
-        Model {snapshot.modelVersion} · confidence {Math.round(snapshot.confidence * 100)}% · Data:
-        Synthetic / Simulation
+        Demo model {snapshot.modelVersion} · synthetic inputs; not a live crowd assessment
       </div>
     </div>
   );

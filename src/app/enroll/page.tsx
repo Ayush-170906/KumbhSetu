@@ -75,7 +75,7 @@ function EnrollInner() {
           <h1 className="text-lg font-semibold text-ink">You&rsquo;re registered as a volunteer</h1>
           <p className="text-xs text-ink-muted -mt-1">
             Your volunteer ID is <span className="font-mono-num text-ink">{done.id}</span> — the
-            control room can see you on the roster now.
+            saved in this browser’s prototype roster. No organization has received your details.
           </p>
 
           <VolunteerJoinCard volunteerId={done.id} />
@@ -103,10 +103,14 @@ function EnrollInner() {
         <div className="flex items-start justify-between gap-2">
           <div>
             <h1 className="text-base font-semibold text-ink">Register as a volunteer</h1>
-            <p className="text-xs text-ink-muted mt-0.5">Add your details and when you can serve. The control room sees this on the roster, and you&rsquo;ll get the volunteer group link right after.</p>
+            <p className="text-xs text-ink-muted mt-0.5">Try the volunteer roster flow using sample details. Nothing is submitted to an organization.</p>
           </div>
           <SimTag label="DEMO" />
         </div>
+
+        <p className="border-l-2 border-status-amber bg-status-amber-bg/50 px-3 py-2 text-[11px] text-ink-muted">
+          Demo data is stored in this browser. Do not enter real personal or contact information.
+        </p>
 
         <Field label="Full name">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. R. Kulkarni"

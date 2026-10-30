@@ -5,7 +5,7 @@ export function DemoTimeline({ log }: { log: DemoLogEntry[] }) {
   return (
     <div className="space-y-0">
       {log.length === 0 && (
-        <p className="text-xs text-ink-soft px-3 py-4">Press &ldquo;Run Live Demo&rdquo; to start the scripted scenario.</p>
+        <p className="text-xs text-ink-soft px-3 py-4">Choose a scenario and start the guided response workflow.</p>
       )}
       {log.map((entry, idx) => (
         <div

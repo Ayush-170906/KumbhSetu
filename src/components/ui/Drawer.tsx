@@ -19,8 +19,8 @@ export function Drawer({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
-      <div className="absolute inset-0 bg-ink/20" onClick={onClose} />
-      <div className="relative w-full max-w-md h-full bg-surface border-l border-border shadow-panel overflow-y-auto scroll-thin animate-fade-in-up">
+      <button type="button" className="absolute inset-0 cursor-default bg-ink/30" onClick={onClose} aria-label="Close details" />
+      <div role="dialog" aria-modal="true" aria-label={typeof title === "string" ? title : eyebrow ?? "Details"} className="relative w-full max-w-md h-full bg-surface border-l border-border shadow-panel overflow-y-auto scroll-thin animate-fade-in-up">
         <div className="sticky top-0 bg-surface border-b border-border px-5 py-4 flex items-start justify-between z-10">
           <div>
             {eyebrow && (

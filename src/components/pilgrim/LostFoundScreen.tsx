@@ -28,8 +28,7 @@ export function LostFoundScreen({ zone }: { zone: Zone }) {
         <div className="rounded-sm border border-border bg-surface-muted px-3 py-2.5 flex items-start gap-2.5">
           <Icon name="shield" className="h-4 w-4 text-ink-muted shrink-0 mt-0.5" />
           <p className="text-[11px] text-ink-muted leading-relaxed">
-            Lost &amp; Found cases involve personal information. Access is restricted to authorized volunteers and
-            control-room staff, and reports feed directly into the incident system.
+            Prototype only: reports stay in this browser and are not sent to volunteers or officials. Use sample details; avoid real names, photos or contact information. For urgent help, call 112 or go to a staffed help desk.
           </p>
         </div>
         <MenuCard icon="lost" title="Report Missing Person" body="Raise a case for someone separated from you." onClick={() => setMode("missing-form")} />
@@ -49,8 +48,7 @@ export function LostFoundScreen({ zone }: { zone: Zone }) {
       <div className="flex-1 p-4 flex flex-col">
         <h1 className="text-base font-semibold text-ink">Report a Missing Person</h1>
         <p className="text-xs text-ink-muted mt-1 mb-4">
-          This creates a case visible to volunteers and the control room near {zone.shortName}. Provide identifying
-          details — age, clothing, last seen location.
+          This creates a sample case in this browser near {zone.shortName}. It does not alert responders. For an active emergency, call 112 or ask a nearby official for help.
         </p>
         <textarea
           value={description}
@@ -95,8 +93,7 @@ export function LostFoundScreen({ zone }: { zone: Zone }) {
         <h1 className="text-lg font-semibold text-ink">Case Registered</h1>
         <p className="font-mono-num text-sm text-ink-muted mt-1">{caseCode}</p>
         <p className="text-xs text-ink-muted mt-3 max-w-xs">
-          Nearby volunteers and the control room have been notified. You can track this case in the incident timeline
-          from the control room view.
+          Saved in this browser’s prototype session only. No volunteer or authority has been notified. For urgent help, call 112.
         </p>
         <Button className="mt-6" onClick={() => setMode("menu")}>
           Done
@@ -156,12 +153,11 @@ export function LostFoundScreen({ zone }: { zone: Zone }) {
         {matchedCode ? (
           <div className="mt-4 rounded-sm border border-status-amber-border bg-status-amber-bg px-3 py-2.5 text-xs text-status-amber max-w-xs">
             Possible match found with open case <span className="font-mono-num font-semibold">{matchedCode}</span>.
-            The control room has been flagged to confirm and reunite.
+            This prototype matched the sample reports in this browser. No official register was checked.
           </div>
         ) : (
           <p className="text-xs text-ink-muted mt-3 max-w-xs">
-            No open case matched automatically yet — this report stays visible to the control room for manual
-            matching as new cases come in.
+            No matching sample case was found in this browser. No control room has been notified.
           </p>
         )}
         <Button className="mt-6" onClick={() => setMode("menu")}>

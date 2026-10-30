@@ -38,16 +38,18 @@ export default function ManagementApp() {
   const selectedIncidentVolunteer = selectedIncident?.assignedVolunteerId
     ? store.volunteers.find((v) => v.id === selectedIncident.assignedVolunteerId)
     : undefined;
+  const reservedVolunteerIds = new Set(store.tasks.filter((task) => !["resolved", "escalated", "cancelled"].includes(task.state)).map((task) => task.assigneeId));
+  const assignableVolunteers = store.volunteers.filter((v) => v.availability === "available" && !reservedVolunteerIds.has(v.id));
 
   return (
-    <div className="h-screen flex flex-col bg-ivory">
+    <div className="min-h-screen flex flex-col bg-ivory lg:h-screen">
       <TopStatusBar
         connectivity={store.systemStatus.connectivity}
         activeIncidents={activeIncidents.length}
         volunteersAvailable={volunteersAvailable}
         zonesAtRisk={zonesAtRisk}
       />
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 flex-col lg:flex-row">
         <SideNav active={view} onChange={setView} onReset={() => store.resetAll()} />
 
         {view === "operations" && (
@@ -199,6 +201,13 @@ export default function ManagementApp() {
             incident={selectedIncident}
             zone={store.zones.find((z) => z.id === selectedIncident.zoneId)}
             volunteer={selectedIncidentVolunteer}
+            assignableVolunteers={assignableVolunteers}
+            onTriage={() => store.triageIncident(selectedIncident.id)}
+            onAssign={(volunteerId) => {
+              store.dispatchIncident(selectedIncident.id, [], volunteerId);
+              const assignment = useAppStore.getState().tasks.find((task) => task.incidentId === selectedIncident.id && task.assigneeId === volunteerId && !["resolved", "escalated", "cancelled"].includes(task.state));
+              return Boolean(assignment);
+            }}
           />
         )}
       </Drawer>

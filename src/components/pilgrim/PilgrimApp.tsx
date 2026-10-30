@@ -107,7 +107,7 @@ export default function PilgrimApp() {
           <div>
             <div className="font-semibold">Connectivity degraded</div>
             <div className="mt-0.5">
-              Cached facility information remains available. SOS will still attempt an emergency fallback path.{" "}
+              This prototype cannot send SOS reports. For urgent help, call <a href="tel:112" className="underline font-semibold">112</a>.{" "}
               <button className="underline" onClick={() => store.setConnectivity("nominal")}>
                 Restore connection
               </button>

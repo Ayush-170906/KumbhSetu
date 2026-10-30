@@ -4,6 +4,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/Button";
 import { DemoLoopDiagram, SyntheticTag } from "./DemoShared";
 import { OUTRO_LINES, OUTRO_WORDMARK, OUTRO_TAGLINE } from "@/lib/demoScript";
+import { DEMO_SCENARIOS, type DemoScenario } from "@/lib/demoScript";
 
 const ROLES = [
   { icon: "pilgrim" as const, title: "Pilgrim", line: "Needs help" },
@@ -12,20 +13,50 @@ const ROLES = [
 ];
 
 /** Full-bleed cover shown before the demo starts and on step 1 (intro). */
-export function DemoIntro({ onStart, started }: { onStart: () => void; started: boolean }) {
+export function DemoIntro({ onStart, onSelectScenario, scenario, started }: {
+  onStart: () => void;
+  onSelectScenario: (scenario: DemoScenario) => void;
+  scenario: DemoScenario;
+  started: boolean;
+}) {
   return (
     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 overflow-y-auto bg-ivory/95 px-6 py-5 backdrop-blur-sm">
       <div className="text-center">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-soft">Kumbh Setu — Live Demo</div>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-soft">Kumbh Setu — Guided Demo · Synthetic data</div>
         <h1 className="mt-1 max-w-2xl text-lg font-semibold text-ink">
           From Ground Observation to Coordinated Response
         </h1>
         <p className="mt-1 text-sm text-ink-muted">One connected response platform for mass gatherings.</p>
       </div>
 
+      {!started && (
+        <fieldset className="w-full max-w-3xl">
+          <legend className="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft">
+            Choose a response scenario
+          </legend>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {(Object.entries(DEMO_SCENARIOS) as [DemoScenario, (typeof DEMO_SCENARIOS)[DemoScenario]][]).map(([id, item]) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={scenario === id}
+                onClick={() => onSelectScenario(id)}
+                className={`flex min-h-20 items-start gap-3 border px-3 py-3 text-left transition-colors ${scenario === id ? "border-primary bg-primary-soft/60" : "border-border bg-surface hover:bg-surface-muted"}`}
+              >
+                <Icon name={item.icon} className={`mt-0.5 h-4 w-4 shrink-0 ${scenario === id ? "text-primary-dark" : "text-ink-muted"}`} />
+                <span>
+                  <span className="block text-xs font-semibold text-ink">{item.title}</span>
+                  <span className="mt-1 block text-[11px] leading-snug text-ink-muted">{item.description}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      )}
+
       <div className="grid w-full max-w-2xl grid-cols-3 gap-3">
         {ROLES.map((r) => (
-          <div key={r.title} className="rounded-sm border border-border bg-surface p-3 text-center">
+            <div key={r.title} className="border border-border bg-surface p-3 text-center">
             <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-sm bg-primary-soft">
               <Icon name={r.icon} className="h-4 w-4 text-primary-dark" />
             </div>
@@ -45,8 +76,8 @@ export function DemoIntro({ onStart, started }: { onStart: () => void; started: 
       <div className="flex flex-col items-center gap-2">
         <SyntheticTag />
         {!started && (
-          <Button onClick={onStart}>
-            <Icon name="navigation" className="h-4 w-4" /> Run Live Demo
+          <Button onClick={onStart} size="lg">
+            <Icon name="navigation" className="h-4 w-4" /> Run {DEMO_SCENARIOS[scenario].title} demo
           </Button>
         )}
         {started && <div className="text-xs text-ink-soft">Starting…</div>}

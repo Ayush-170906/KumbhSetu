@@ -3,23 +3,20 @@
 import type { LanguageCode } from "@/lib/types";
 import { LANGUAGE_LABELS } from "@/lib/i18n";
 
-const codes: LanguageCode[] = ["en", "hi", "mr"];
+const codes: LanguageCode[] = ["en", "hi", "mr", "ta"];
 
 export function LanguageSwitcher({ value, onChange }: { value: LanguageCode; onChange: (l: LanguageCode) => void }) {
   return (
-    <div className="flex rounded-sm border border-border overflow-hidden shrink-0">
-      {codes.map((code) => (
-        <button
-          key={code}
-          onClick={() => onChange(code)}
-          className={`px-2 py-1 text-[10.5px] font-medium transition-colors ${
-            value === code ? "bg-primary text-white" : "bg-surface text-ink-muted hover:bg-surface-muted"
-          }`}
-          title={LANGUAGE_LABELS[code]}
-        >
-          {code.toUpperCase()}
-        </button>
-      ))}
-    </div>
+    <label className="block shrink-0">
+      <span className="sr-only">Choose language</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value as LanguageCode)}
+        aria-label="Choose language"
+        className="min-h-10 max-w-32 border border-border bg-surface px-2.5 text-xs font-medium text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+      >
+        {codes.map((code) => <option key={code} value={code}>{LANGUAGE_LABELS[code]}</option>)}
+      </select>
+    </label>
   );
 }

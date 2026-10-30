@@ -11,6 +11,8 @@ import { AvailabilityHeader } from "@/components/volunteer/AvailabilityHeader";
 import { TaskDetail } from "@/components/volunteer/TaskDetail";
 import { EmptyQueue } from "@/components/volunteer/EmptyQueue";
 import { ZoneChat } from "@/components/volunteer/ZoneChat";
+import { StatusPill } from "@/components/ui/StatusPill";
+import { severityLabel, severityTone, statusLabel, typeLabel } from "@/lib/incidentMeta";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -22,16 +24,16 @@ function greeting(): string {
 type FieldTab = "companion" | "tasks" | "team";
 
 function initialTab(): FieldTab {
-  if (typeof window === "undefined") return "companion";
+  if (typeof window === "undefined") return "tasks";
   const raw = new URLSearchParams(window.location.search).get("tab");
   if (raw === "tasks" || raw === "task") return "tasks";
   if (raw === "team" || raw === "chat") return "team";
-  return "companion";
+  return "tasks";
 }
 
 /**
- * The volunteer's single primary surface (§37). Setu AI is the default view;
- * Tasks and Team are one thumb-tap away on the same screen. This replaces the
+ * The volunteer's single primary surface (§37). Assigned tasks are the default;
+ * Setu AI and Team are one thumb-tap away on the same screen. This replaces the
  * separate /volunteer app — that route now redirects here.
  */
 export function FieldHome() {
@@ -39,6 +41,9 @@ export function FieldHome() {
   const [volunteerId, setVolunteerId] = useState("V-218");
   const [tab, setTab] = useState<FieldTab>(initialTab);
   const [toast, setToast] = useState<{ kind: string; id: string } | null>(null);
+  const [taskView, setTaskView] = useState<"active" | "history">("active");
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [taskSearch, setTaskSearch] = useState("");
 
   useEffect(() => {
     subscribeToRealtimeEvents();
@@ -47,9 +52,17 @@ export function FieldHome() {
   const volunteer = store.volunteers.find((v) => v.id === volunteerId) ?? store.volunteers[0];
   const zone = store.zones.find((z) => z.id === volunteer.zoneId);
 
-  const activeTask = store.tasks.find(
-    (t) => t.assigneeId === volunteer.id && !["resolved", "escalated", "cancelled"].includes(t.state)
-  );
+  const volunteerTasks = store.tasks
+    .filter((item) => item.assigneeId === volunteer.id)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const activeTasks = volunteerTasks.filter((item) => !["resolved", "escalated", "cancelled"].includes(item.state));
+  const completedTasks = volunteerTasks.filter((item) => ["resolved", "escalated", "cancelled"].includes(item.state));
+  const matchingTasks = activeTasks.filter((item) => {
+    const inc = store.incidents.find((entry) => entry.id === item.incidentId);
+    const text = `${inc?.code ?? ""} ${inc?.summary ?? ""} ${inc?.zoneId ?? ""}`.toLowerCase();
+    return text.includes(taskSearch.trim().toLowerCase());
+  });
+  const activeTask = matchingTasks.find((item) => item.id === selectedTaskId) ?? matchingTasks[0] ?? (taskSearch.trim() ? undefined : activeTasks[0]);
   const activeIncident = activeTask ? store.incidents.find((i) => i.id === activeTask.incidentId) : undefined;
   const otherVolunteers = store.volunteers.filter((v) => v.id !== volunteer.id && v.zoneId === volunteer.zoneId);
   const zoneMessages = store.messages.filter((m) => m.zoneId === volunteer.zoneId);
@@ -114,7 +127,7 @@ export function FieldHome() {
           <div className="mx-3 mt-2 rounded-sm border border-status-green-border bg-status-green-bg px-3 py-2 text-xs text-status-green flex items-center gap-2 animate-fade-in-up">
             <Icon name="check" className="h-3.5 w-3.5" />
             {toast.kind === "incident" ? "Incident" : toast.kind === "groundReport" ? "Field report" : "Task"} created —
-            visible to the control room now.
+            visible in this browser’s management demo.
           </div>
         )}
 
@@ -151,7 +164,42 @@ export function FieldHome() {
               locked={!!activeTask}
               onChangeAvailability={(a) => store.setVolunteerAvailability(volunteer.id, a)}
             />
-            {activeTask && activeIncident ? (
+            <section className="border-b border-border bg-surface px-4 py-3" aria-label="Assigned task queue">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-ink">My assignments</h2>
+                  <p className="text-[11px] text-ink-soft">Sample tasks · this browser only</p>
+                </div>
+                <div className="flex border border-border" role="group" aria-label="Task queue view">
+                  <button type="button" onClick={() => setTaskView("active")} aria-pressed={taskView === "active"} className={`min-h-10 px-3 text-xs font-medium ${taskView === "active" ? "bg-secondary text-white" : "bg-surface text-ink-muted"}`}>Active {activeTasks.length}</button>
+                  <button type="button" onClick={() => setTaskView("history")} aria-pressed={taskView === "history"} className={`min-h-10 border-l border-border px-3 text-xs font-medium ${taskView === "history" ? "bg-secondary text-white" : "bg-surface text-ink-muted"}`}>History {completedTasks.length}</button>
+                </div>
+              </div>
+              {taskView === "active" && activeTasks.length > 1 && (
+                <div className="mt-3 space-y-1.5">
+                  <label className="sr-only" htmlFor="task-search">Search assigned tasks</label>
+                  <input id="task-search" value={taskSearch} onChange={(event) => setTaskSearch(event.target.value)} placeholder="Search task or location" className="h-10 w-full border border-border bg-ivory px-3 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" />
+                  {matchingTasks.map((item) => {
+                    const inc = store.incidents.find((entry) => entry.id === item.incidentId);
+                    const itemZone = store.zones.find((entry) => entry.id === inc?.zoneId);
+                    if (!inc) return null;
+                    return <button key={item.id} type="button" onClick={() => setSelectedTaskId(item.id)} aria-pressed={activeTask?.id === item.id} className={`flex min-h-11 w-full items-center justify-between gap-2 border px-3 py-2 text-left ${activeTask?.id === item.id ? "border-primary bg-primary-soft/50" : "border-border bg-surface"}`}><span className="min-w-0"><span className="block truncate text-xs font-semibold text-ink">{typeLabel(inc.type)} · {itemZone?.shortName ?? inc.zoneId}</span><span className="block truncate text-[10px] text-ink-soft">{inc.code} · {statusLabel(inc.status)}</span></span><StatusPill tone={severityTone(inc.severity)}>{severityLabel(inc.severity)}</StatusPill></button>;
+                  })}
+                  {matchingTasks.length === 0 && <p className="px-1 py-2 text-xs text-ink-soft">No assigned tasks match that search.</p>}
+                </div>
+              )}
+            </section>
+            {taskView === "history" ? (
+              <div className="space-y-2 p-4">
+                {completedTasks.length === 0 ? <p className="border border-dashed border-border p-4 text-xs text-ink-soft">Completed and escalated assignments will appear here.</p> : completedTasks.map((item) => {
+                  const inc = store.incidents.find((entry) => entry.id === item.incidentId);
+                  const itemZone = store.zones.find((entry) => entry.id === inc?.zoneId);
+                  return <article key={item.id} className="flex items-center justify-between gap-3 border border-border bg-surface p-3"><div className="min-w-0"><h3 className="truncate text-xs font-semibold text-ink">{inc ? `${typeLabel(inc.type)} · ${itemZone?.shortName ?? inc.zoneId}` : "Assignment"}</h3><p className="mt-1 text-[10px] text-ink-soft">{inc?.code ?? "Sample task"} · {item.resolvedAt ? new Date(item.resolvedAt).toLocaleString() : "Closed"}</p></div><StatusPill tone={item.state === "resolved" ? "green" : item.state === "escalated" ? "yellow" : "neutral"}>{item.state}</StatusPill></article>;
+                })}
+              </div>
+            ) : activeTasks.length > 1 && taskSearch.trim() && !activeTask ? (
+              <p className="m-4 border border-dashed border-border p-4 text-xs text-ink-soft">No assigned tasks match that search. Clear the search to return to your queue.</p>
+            ) : activeTask && activeIncident ? (
               <TaskDetail
                 task={activeTask}
                 incident={activeIncident}
@@ -164,6 +212,7 @@ export function FieldHome() {
                 onResolve={() => store.resolveTask(activeTask.id, "resolved")}
                 onEscalate={() => store.resolveTask(activeTask.id, "escalated")}
                 onAttachPhoto={(dataUrl) => store.attachPhoto(activeIncident.id, dataUrl, volunteer.id)}
+                onAddNote={(note) => store.addIncidentNote(activeIncident.id, note, `${volunteer.name} · ${volunteer.id}`)}
               />
             ) : (
               <EmptyQueue

@@ -9,6 +9,8 @@ export interface KumbhImage {
   src: string;
   /** short alt text */
   alt: string;
+  /** Original Wikimedia Commons file page with licence and author details. */
+  source: string;
   /** "<author> · <licence>" — rendered near the image where space allows */
   credit: string;
   /** approximate focal point for object-position, e.g. "50% 40%" */
@@ -20,6 +22,7 @@ export const KUMBH_IMAGES = {
   snan: {
     src: "/images/kumbh/simhastha-nashik.jpg",
     alt: "Pilgrims bathing on the Godavari during the Nashik Simhastha Kumbh Mela",
+    source: "https://commons.wikimedia.org/wiki/File:Simhastha_Kumbh_Mela_at_Nashik_in_Maharashtra_state.jpg",
     credit: "Prashant Kharote · CC BY-SA 4.0",
     focus: "50% 42%",
   },
@@ -27,6 +30,7 @@ export const KUMBH_IMAGES = {
   ghats: {
     src: "/images/kumbh/godavari-ghats.jpg",
     alt: "Kumbh Mela crowds on the ghats of the river Godavari, Nashik",
+    source: "https://commons.wikimedia.org/wiki/File:Kumbha_mela_on_ghats_of_the_river_godavari_nashik.jpg",
     credit: "Prashant Kharote · CC BY-SA 4.0",
     focus: "50% 45%",
   },
@@ -34,6 +38,7 @@ export const KUMBH_IMAGES = {
   dip: {
     src: "/images/kumbh/goda-ghat-snan.jpg",
     alt: "Devotees taking the holy dip at Goda Ghat, Nashik, during the Kumbh Mela",
+    source: "https://commons.wikimedia.org/wiki/File:Nashik_kumbha_snan.jpg",
     credit: "Prashant Kharote · CC BY 4.0",
     focus: "50% 50%",
   },
@@ -41,6 +46,7 @@ export const KUMBH_IMAGES = {
   temple: {
     src: "/images/kumbh/trimbakeshwar-temple.jpg",
     alt: "Trimbakeshwar Shiva Temple, one of the twelve Jyotirlingas, near Nashik",
+    source: "https://commons.wikimedia.org/wiki/File:Trimbakeshwar_Shiva_Temple.jpg",
     credit: "Aniket.ganguly · CC BY-SA 3.0",
     focus: "50% 35%",
   },

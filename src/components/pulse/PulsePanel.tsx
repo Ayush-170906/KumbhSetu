@@ -20,7 +20,7 @@ export function PulsePanel({
       <div className="flex items-center justify-between mb-1">
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft">Kumbh Pulse</div>
-          <div className="text-xs text-ink-muted -mt-0.5">Explainable crowd-risk intelligence</div>
+          <div className="text-xs text-ink-muted -mt-0.5">Illustrative rule score · synthetic inputs</div>
         </div>
         <StatusPill tone={snapshot.band}>{bandLabel(snapshot.band)}</StatusPill>
       </div>
@@ -30,14 +30,7 @@ export function PulsePanel({
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold text-ink">{zone.shortName}</div>
           <div className="text-xs text-ink-muted">{zone.name}</div>
-          {snapshot.forecastBand && snapshot.forecastHorizonMinutes ? (
-            <div className="mt-2 text-xs text-ink-muted">
-              Forecast: <span className="font-medium text-ink">{bandLabel(snapshot.forecastBand)}</span> in{" "}
-              {snapshot.forecastHorizonMinutes[0]}–{snapshot.forecastHorizonMinutes[1]} min
-            </div>
-          ) : (
-            <div className="mt-2 text-xs text-ink-muted">No elevated forecast at this time</div>
-          )}
+          <div className="mt-2 text-xs text-ink-muted">Demo score only · not a live crowd assessment or forecast</div>
         </div>
       </div>
 
@@ -62,7 +55,7 @@ export function PulsePanel({
 
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border text-[10px] text-ink-soft">
         <span>
-          Model {snapshot.modelVersion} · confidence {Math.round(snapshot.confidence * 100)}%
+          Demo model {snapshot.modelVersion} · synthetic values
         </span>
         <span>Updated {formatClockShort(snapshot.generatedAt)}</span>
       </div>

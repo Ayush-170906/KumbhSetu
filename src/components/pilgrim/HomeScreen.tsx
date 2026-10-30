@@ -84,10 +84,25 @@ export function HomeScreen({
         </div>
       </div>
 
-      {/* Kumbh Setu Assistant — the primary way to get help, first on the page */}
+      <button
+        onClick={() => onNavigate("sos-type")}
+        className="mx-4 mt-4 flex min-h-16 w-[calc(100%-2rem)] items-center gap-3 border border-status-red-border bg-status-red px-4 py-3 text-left text-white transition-colors hover:bg-[#8f2c20] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-status-red"
+        aria-label="Request emergency assistance"
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-white/25 bg-white/10">
+          <Icon name="sos" className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold">{t("sos", language)}</span>
+          <span className="mt-0.5 block text-xs text-white/85">Emergency medical, safety or crowd help</span>
+        </span>
+        <Icon name="chevron-right" className="h-4 w-4 shrink-0" />
+      </button>
+
+      {/* Setu is available, but the urgent action stays first and obvious. */}
       <button
         onClick={() => onNavigate("assistant")}
-        className="mx-4 mt-4 w-[calc(100%-2rem)] flex items-center gap-3 rounded-xl border border-primary/35 bg-gradient-to-br from-primary-soft/80 to-surface px-4 py-3.5 text-left tile"
+        className="mx-4 mt-3 w-[calc(100%-2rem)] flex min-h-14 items-center gap-3 border border-border bg-surface px-4 py-3 text-left transition-colors hover:bg-surface-muted"
       >
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-primary text-white">
           <Icon name="pulse" className="h-5 w-5" />
@@ -163,25 +178,22 @@ export function HomeScreen({
         <Icon name="chevron-right" className="h-4 w-4 text-primary shrink-0" />
       </button>
 
-      <div className="grid grid-cols-3 gap-2.5 mx-4 mt-3">
-        {actions.map((a) => (
+      <div className="grid grid-cols-2 gap-2.5 mx-4 mt-3">
+        {actions.filter((a) => a.tone !== "sos").map((a) => (
           <button
             key={a.screen}
             onClick={() => onNavigate(a.screen)}
-            className={`flex flex-col items-center justify-center gap-2 rounded-sm border py-4 transition-colors ${
-              a.tone === "sos"
-                ? "col-span-3 flex-row bg-primary border-primary text-white hover:bg-primary-dark"
-                : "border-border bg-surface text-ink hover:bg-surface-muted"
-            }`}
+            className="flex min-h-20 flex-col items-center justify-center gap-2 border border-border bg-surface px-2 py-3 text-ink transition-colors hover:bg-surface-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
           >
-            <Icon name={a.icon} className={a.tone === "sos" ? "h-5 w-5" : "h-5 w-5 text-ink-muted"} />
-            <span className={`text-xs font-medium ${a.tone === "sos" ? "text-white text-sm" : ""}`}>{t(a.key, language)}</span>
+            <Icon name={a.icon} className="h-5 w-5 text-ink-muted" />
+            <span className="text-xs font-medium">{t(a.key, language)}</span>
           </button>
         ))}
       </div>
 
       <div className="mx-4 mt-6">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft mb-2">{t("nearby", language)}</div>
+        <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft mb-1">Sample nearby places</div>
+        <p className="text-[10px] text-ink-soft mb-2">Availability and load are illustrative; verify locally.</p>
         <div className="space-y-2">
           {nearby.map((f) => (
             <div key={f.id} className="flex items-center gap-3 rounded-sm border border-border bg-surface px-3 py-2.5">
@@ -194,9 +206,9 @@ export function HomeScreen({
               </div>
               <div className="text-right shrink-0">
                 <div className={`text-[11px] font-medium ${f.status === "open" ? "text-status-green" : "text-status-amber"}`}>
-                  {f.status.toUpperCase()}
+                  Sample {f.status.toUpperCase()}
                 </div>
-                <div className="text-[10px] text-ink-soft">{f.load} load</div>
+                <div className="text-[10px] text-ink-soft">sample load: {f.load}</div>
               </div>
             </div>
           ))}
@@ -209,7 +221,7 @@ export function HomeScreen({
       >
         <span className="flex items-center gap-2">
           <Icon name="layers" className="h-4 w-4 text-ink-soft" />
-          Common Operations Board — live incidents, notices &amp; helplines
+          Common Operations Board — demo activity &amp; public helplines
         </span>
         <Icon name="chevron-right" className="h-4 w-4 text-ink-soft" />
       </Link>
