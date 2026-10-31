@@ -4,6 +4,7 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 
 export type ManagementView =
   | "operations"
+  | "volunteers"
   | "copilot"
   | "pulse"
   | "fieldreports"
@@ -24,7 +25,10 @@ type NavGroup = { heading: string; items: NavItem[] };
 const GROUPS: NavGroup[] = [
   {
     heading: "Operations",
-    items: [{ id: "operations", label: "Live Operations", icon: "layers" }],
+    items: [
+      { id: "operations", label: "Live Operations", icon: "layers" },
+      { id: "volunteers", label: "Volunteer Command", icon: "volunteer" },
+    ],
   },
   {
     heading: "AI",

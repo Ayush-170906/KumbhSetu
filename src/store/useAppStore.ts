@@ -41,7 +41,6 @@ import { deriveEmergingSignals } from "@/lib/signals";
 import {
   ZONES,
   FACILITIES,
-  VOLUNTEERS,
   RISK_SNAPSHOTS,
   RESOURCES,
   INITIAL_INCIDENTS,
@@ -51,6 +50,7 @@ import {
   INITIAL_FEEDBACK,
   findZone,
 } from "@/lib/seed";
+import { createVolunteerOps, volunteerOpsDefaults, type VolunteerOpsState } from "./volunteerSlice";
 import {
   findNearestAvailableVolunteer,
   estimateEtaMinutes,
@@ -192,7 +192,7 @@ const emptyDemoState = (scenario: DemoScenario = "missing", isolationActive = fa
   log: [],
 });
 
-export interface AppState {
+export interface AppState extends VolunteerOpsState {
   zones: Zone[];
   facilities: Facility[];
   volunteers: Volunteer[];
@@ -287,10 +287,24 @@ let demoTimers: ReturnType<typeof setTimeout>[] = [];
 let demoReturnState: Partial<AppState> | null = null;
 
 function resetSimulationState(): Partial<AppState> {
+  const ops = volunteerOpsDefaults();
   return {
     zones: clone(ZONES),
     facilities: clone(FACILITIES),
-    volunteers: clone(VOLUNTEERS),
+    volunteers: clone(ops.volunteers),
+    ngos: clone(ops.ngos),
+    trainingSessions: clone(ops.trainingSessions),
+    trainingEnrollments: clone(ops.trainingEnrollments),
+    deployments: clone(ops.deployments),
+    rosterAssignments: clone(ops.rosterAssignments),
+    attendanceRecords: clone(ops.attendanceRecords),
+    mealAllocations: clone(ops.mealAllocations),
+    accommodations: clone(ops.accommodations),
+    accommodationAssignments: clone(ops.accommodationAssignments),
+    fieldActivities: clone(ops.fieldActivities),
+    identityEvents: clone(ops.identityEvents),
+    savedVolunteerFilters: clone(ops.savedVolunteerFilters),
+    volunteerSeq: ops.volunteerSeq,
     incidents: clone(INITIAL_INCIDENTS),
     tasks: [],
     systemStatus: { mode: "simulation", connectivity: "nominal", lastSyncAt: nowIso() } as SystemStatus,
@@ -558,10 +572,25 @@ function recalcZoneRisk(get: () => AppState, set: (fn: (s: AppState) => Partial<
   });
 }
 
+const opsDefault = volunteerOpsDefaults();
+
 const defaultData = {
   zones: clone(ZONES),
   facilities: clone(FACILITIES),
-  volunteers: clone(VOLUNTEERS),
+  volunteers: clone(opsDefault.volunteers),
+  ngos: clone(opsDefault.ngos),
+  trainingSessions: clone(opsDefault.trainingSessions),
+  trainingEnrollments: clone(opsDefault.trainingEnrollments),
+  deployments: clone(opsDefault.deployments),
+  rosterAssignments: clone(opsDefault.rosterAssignments),
+  attendanceRecords: clone(opsDefault.attendanceRecords),
+  mealAllocations: clone(opsDefault.mealAllocations),
+  accommodations: clone(opsDefault.accommodations),
+  accommodationAssignments: clone(opsDefault.accommodationAssignments),
+  fieldActivities: clone(opsDefault.fieldActivities),
+  identityEvents: clone(opsDefault.identityEvents),
+  savedVolunteerFilters: clone(opsDefault.savedVolunteerFilters),
+  volunteerSeq: opsDefault.volunteerSeq,
   incidents: clone(INITIAL_INCIDENTS),
   tasks: [] as Task[],
   riskSnapshots: clone(RISK_SNAPSHOTS),
@@ -592,6 +621,18 @@ const defaultData = {
 // un-paused back to "not running" rather than shown stuck. The ambient
 // simulation interval lives in module state that a reload clears too, so
 // simulationRunning is likewise reset — Management re-arms it via initSimulation().
+function mergeVolunteerRoster(persistedVolunteers: unknown, seed: Volunteer[]): Volunteer[] {
+  if (!Array.isArray(persistedVolunteers) || persistedVolunteers.length === 0) return clone(seed);
+  const map = new Map<string, Volunteer>();
+  for (const volunteer of seed) map.set(volunteer.id, volunteer);
+  for (const raw of persistedVolunteers) {
+    const volunteer = raw as Volunteer;
+    if (!volunteer?.id) continue;
+    map.set(volunteer.id, { ...map.get(volunteer.id), ...volunteer });
+  }
+  return [...map.values()];
+}
+
 const persisted = loadPersistedState();
 const savedDemo = persisted?.demo as Partial<DemoState> | undefined;
 const savedScenario: DemoScenario = savedDemo?.scenario === "medical" || savedDemo?.scenario === "crowd"
@@ -601,6 +642,19 @@ const initialData = persisted
   ? {
       ...defaultData,
       ...persisted,
+      volunteers: mergeVolunteerRoster(persisted.volunteers, defaultData.volunteers),
+      ngos: Array.isArray(persisted.ngos) ? persisted.ngos : defaultData.ngos,
+      trainingSessions: Array.isArray(persisted.trainingSessions) ? persisted.trainingSessions : defaultData.trainingSessions,
+      trainingEnrollments: Array.isArray(persisted.trainingEnrollments) ? persisted.trainingEnrollments : defaultData.trainingEnrollments,
+      deployments: Array.isArray(persisted.deployments) ? persisted.deployments : defaultData.deployments,
+      rosterAssignments: Array.isArray(persisted.rosterAssignments) ? persisted.rosterAssignments : defaultData.rosterAssignments,
+      attendanceRecords: Array.isArray(persisted.attendanceRecords) ? persisted.attendanceRecords : defaultData.attendanceRecords,
+      mealAllocations: Array.isArray(persisted.mealAllocations) ? persisted.mealAllocations : defaultData.mealAllocations,
+      accommodations: Array.isArray(persisted.accommodations) ? persisted.accommodations : defaultData.accommodations,
+      accommodationAssignments: Array.isArray(persisted.accommodationAssignments) ? persisted.accommodationAssignments : defaultData.accommodationAssignments,
+      fieldActivities: Array.isArray(persisted.fieldActivities) ? persisted.fieldActivities : defaultData.fieldActivities,
+      identityEvents: Array.isArray(persisted.identityEvents) ? persisted.identityEvents : defaultData.identityEvents,
+      savedVolunteerFilters: Array.isArray(persisted.savedVolunteerFilters) ? persisted.savedVolunteerFilters : defaultData.savedVolunteerFilters,
       simulationRunning: false,
       demo: {
         ...defaultData.demo,
@@ -615,6 +669,7 @@ const initialData = persisted
   : defaultData;
 
 export const useAppStore = create<AppState>((set, get) => ({
+  ...createVolunteerOps(set as never, get as never),
   ...initialData,
 
   setLanguage: (language) => set(() => ({ language })),
@@ -1473,6 +1528,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       slots: input.kind === "professional" ? input.slots ?? [] : undefined,
       enrolledAt: nowIso(),
       enrolledBy: input.enrolledBy ?? "self",
+      category: "general",
+      preferredLanguage: input.languages[0],
+      identityVerificationStatus: "not_initiated",
+      identityMethod: "manual_document_review",
+      fieldDutyStatus: "not_deployed",
+      registrationComplete: true,
+      availabilityWindow: "custom",
+      state: "Maharashtra",
+      district: "Nashik",
     };
     set((st) => ({
       volunteers: [...st.volunteers, volunteer],

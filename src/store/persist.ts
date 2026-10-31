@@ -53,14 +53,69 @@ const ACTION_KEYS = new Set([
   "promoteReportToIncident",
   "flushOfflineReports",
   "recordSetuAudit",
+  "upsertNgo",
+  "setNgoStatus",
+  "registerVolunteerProfile",
+  "updateVolunteerProfile",
+  "bulkImportVolunteers",
+  "recordIdentityConsent",
+  "setIdentityVerification",
+  "createTrainingSession",
+  "updateTrainingSession",
+  "enrollInTraining",
+  "enrollNgoInTraining",
+  "markTrainingAttendance",
+  "completeTraining",
+  "createDeployment",
+  "generateRoster",
+  "adjustAssignment",
+  "setDeploymentStatus",
+  "markAttendance",
+  "correctAttendance",
+  "checkInVolunteer",
+  "checkOutVolunteer",
+  "allocateMeal",
+  "markMealDistributed",
+  "upsertAccommodation",
+  "assignBed",
+  "accommodationCheck",
+  "recordFieldActivity",
+  "setFieldDutyStatus",
+  "saveVolunteerFilter",
+  "deleteSavedFilter",
+  "reseedVolunteerDemoData",
+  "clearDemoVolunteers",
+  "advanceDemoLifecycle",
 ]);
+
+const SENSITIVE_VOLUNTEER_KEYS = new Set([
+  "accommodationsNote",
+  "emergencyContactPhone",
+  "photoDataUrl",
+  "dateOfBirth",
+  "aadhaarNumber",
+  "aadhaarOtp",
+]);
+
+function stripSensitiveVolunteerFields(data: Record<string, unknown>): Record<string, unknown> {
+  if (!Array.isArray(data.volunteers)) return data;
+  return {
+    ...data,
+    volunteers: data.volunteers.map((raw) => {
+      if (!raw || typeof raw !== "object") return raw;
+      const volunteer = { ...(raw as Record<string, unknown>) };
+      for (const key of SENSITIVE_VOLUNTEER_KEYS) delete volunteer[key];
+      return volunteer;
+    }),
+  };
+}
 
 export function extractPersistableData(state: object): Record<string, unknown> {
   const data: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(state)) {
     if (!ACTION_KEYS.has(key)) data[key] = value;
   }
-  return data;
+  return stripSensitiveVolunteerFields(data);
 }
 
 export function loadPersistedState(): Record<string, unknown> | null {

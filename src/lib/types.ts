@@ -111,6 +111,36 @@ export type VolunteerAvailability = "available" | "on_task" | "off_duty";
  * slots; a general volunteer takes a standing shift. */
 export type VolunteerKind = "professional" | "general";
 
+export type VolunteerCategory =
+  | "crowd_management"
+  | "medical_support"
+  | "help_desk"
+  | "logistics"
+  | "lost_found"
+  | "general";
+
+export type VolunteerAvailabilityWindow = "weekdays" | "weekends" | "full_time" | "custom";
+
+export type IdentityVerificationStatus =
+  | "not_initiated"
+  | "consent_pending"
+  | "verification_pending"
+  | "verified"
+  | "failed"
+  | "manual_review";
+
+export type FieldDutyStatus =
+  | "not_deployed"
+  | "assigned"
+  | "awaiting_checkin"
+  | "checked_in"
+  | "on_duty"
+  | "shift_complete"
+  | "needs_assistance"
+  | "absent";
+
+export type VolunteerGender = "female" | "male" | "other" | "undisclosed";
+
 export interface AvailabilitySlot {
   id: string;
   date: string; // ISO yyyy-mm-dd
@@ -136,7 +166,31 @@ export interface Volunteer {
   /** Working-professional volunteers: the specific windows they've committed. */
   slots?: AvailabilitySlot[];
   enrolledAt?: string;
-  enrolledBy?: "self" | "management";
+  enrolledBy?: "self" | "management" | "ngo_bulk";
+  email?: string;
+  ngoId?: string;
+  category?: VolunteerCategory;
+  preferredLanguage?: LanguageCode;
+  yearOfBirth?: string;
+  gender?: VolunteerGender;
+  emergencyContactName?: string;
+  addressLine?: string;
+  state?: string;
+  district?: string;
+  experience?: string;
+  availabilityWindow?: VolunteerAvailabilityWindow;
+  preferredArea?: string;
+  hasAccessibilityNeed?: boolean;
+  identityVerificationStatus?: IdentityVerificationStatus;
+  identityVerificationRef?: string;
+  identityConsentAt?: string;
+  identityMethod?: "manual_document_review" | "authorized_provider";
+  fieldDutyStatus?: FieldDutyStatus;
+  supervisorName?: string;
+  reportingPoint?: string;
+  sector?: string;
+  registrationComplete?: boolean;
+  isSyntheticDemo?: boolean;
 }
 
 export type TaskState =

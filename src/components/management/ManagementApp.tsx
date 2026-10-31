@@ -18,6 +18,7 @@ import { IncidentDetail } from "@/components/incidents/IncidentDetail";
 import { SetuCompanion } from "@/components/setu/SetuCompanion";
 import { SecurityView } from "@/components/security/SecurityView";
 import { CityDirectoryView } from "./CityDirectoryView";
+import { VmsApp } from "@/components/vms/VmsApp";
 
 export default function ManagementApp() {
   const store = useAppStore();
@@ -68,6 +69,12 @@ export default function ManagementApp() {
               setSelectedZoneId(null);
             }}
           />
+        )}
+
+        {view === "volunteers" && (
+          <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
+            <VmsApp embedded />
+          </div>
         )}
 
         {view === "copilot" && (
